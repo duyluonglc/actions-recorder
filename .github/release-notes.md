@@ -10,8 +10,8 @@
 - **Windows:** if SmartScreen appears, click **More info → Run anyway**.
 - **macOS:** click **Done**, then **System Settings → Privacy & Security → Open Anyway**. Grant the permissions shown in the Welcome window.
 
-📖 [Installation & permissions guide](https://github.com/OWNER/actions-recorder/blob/main/docs/INSTALL.md) · [Hướng dẫn tiếng Việt](https://github.com/OWNER/actions-recorder/blob/main/docs/INSTALL.vi.md)
+📖 [Installation & permissions guide](https://github.com/duyluonglc/actions-recorder/blob/main/docs/INSTALL.md) · [Hướng dẫn tiếng Việt](https://github.com/duyluonglc/actions-recorder/blob/main/docs/INSTALL.vi.md)
 
-❤ Actions Recorder is free. If it helps you, consider [supporting the project](https://github.com/OWNER/actions-recorder#support-).
+❤ Actions Recorder is free. If it helps you, consider [supporting the project](https://github.com/duyluonglc/actions-recorder#support-).
 
 `SHA256SUMS.txt` lists the checksums of all files.

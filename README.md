@@ -10,7 +10,7 @@ Capture what you do once, fine-tune the steps, then let them run for you — wit
 
 ## Download
 
-**[⬇ Download the latest release](https://github.com/OWNER/actions-recorder/releases/latest)** — Windows (`.zip`),
+**[⬇ Download the latest release](https://github.com/duyluonglc/actions-recorder/releases/latest)** — Windows (`.zip`),
 Mac with Apple chip and Mac with Intel (`.dmg`).
 
 The app is not signed with paid certificates, so Windows / macOS show a warning the first time, and macOS needs
@@ -20,7 +20,7 @@ a few permissions. 👉 **Read the [installation & permissions guide](docs/INSTA
 
 Actions Recorder is free for everyone. If it saves you time, you can support its development:
 
-DONATE_LINKS
+[![PayPal](https://img.shields.io/badge/PayPal-Donate-00457C?logo=paypal&logoColor=white)](https://paypal.me/luongnd)
 
 Or simply ⭐ star the repository and tell a friend. Thank you!
 
@@ -49,7 +49,7 @@ AI step you add yourself, to the AI provider you configure (or to a local model)
 ## Run from source
 
 ```bash
-git clone https://github.com/OWNER/actions-recorder.git
+git clone https://github.com/duyluonglc/actions-recorder.git
 cd actions-recorder
 python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt        # Windows: .venv\Scripts\pip ...

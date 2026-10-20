@@ -22,7 +22,7 @@ Still blocked or "damaged"? Run in Terminal:
 After updating to a new version, macOS may forget the permissions: remove
 Actions Recorder from those lists with the "-" button and allow it again.
 
-Full guide: https://github.com/OWNER/actions-recorder/blob/main/docs/INSTALL.md
+Full guide: https://github.com/duyluonglc/actions-recorder/blob/main/docs/INSTALL.md
 
 
 ACTIONS RECORDER — MỞ LẦN ĐẦU TRÊN macOS
@@ -49,4 +49,4 @@ Vẫn bị chặn hoặc báo "bị hỏng" (damaged)? Chạy trong Terminal:
 Sau khi cập nhật phiên bản mới, macOS có thể "quên" quyền: xoá Actions Recorder
 khỏi các danh sách trên bằng nút "-" rồi cấp lại.
 
-Hướng dẫn đầy đủ: https://github.com/OWNER/actions-recorder/blob/main/docs/INSTALL.vi.md
+Hướng dẫn đầy đủ: https://github.com/duyluonglc/actions-recorder/blob/main/docs/INSTALL.vi.md

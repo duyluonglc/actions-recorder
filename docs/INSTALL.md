@@ -2,7 +2,7 @@
 
 [Tiếng Việt](INSTALL.vi.md)
 
-Download the file for your computer from the **[latest release](https://github.com/OWNER/actions-recorder/releases/latest)**:
+Download the file for your computer from the **[latest release](https://github.com/duyluonglc/actions-recorder/releases/latest)**:
 
 | Computer | File |
 |---|---|
@@ -100,7 +100,7 @@ looks on. Fix: in each permission list select **Actions Recorder**, click **−*
 
 ## Checking an installation
 
-Run the built-in self-test and attach the output when you [report a problem](https://github.com/OWNER/actions-recorder/issues):
+Run the built-in self-test and attach the output when you [report a problem](https://github.com/duyluonglc/actions-recorder/issues):
 
 - Windows (Command Prompt, inside the app folder):
   `"Actions Recorder.exe" --self-test report.txt` → then open `report.txt`
@@ -116,7 +116,7 @@ local model such as Ollama, which keeps everything offline).
 ## Running from source
 
 ```bash
-git clone https://github.com/OWNER/actions-recorder.git
+git clone https://github.com/duyluonglc/actions-recorder.git
 cd actions-recorder
 python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt        # Windows: .venv\Scripts\pip ...

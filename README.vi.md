@@ -8,7 +8,7 @@
 
 ## Tải về
 
-**[⬇ Tải bản mới nhất](https://github.com/OWNER/actions-recorder/releases/latest)** — Windows (`.zip`), Mac chip Apple và Mac Intel (`.dmg`).
+**[⬇ Tải bản mới nhất](https://github.com/duyluonglc/actions-recorder/releases/latest)** — Windows (`.zip`), Mac chip Apple và Mac Intel (`.dmg`).
 
 App không ký bằng chứng chỉ trả phí nên lần mở đầu Windows / macOS sẽ cảnh báo, và macOS cần cấp quyền.
 👉 **Xem [hướng dẫn cài đặt & cấp quyền](docs/INSTALL.vi.md)** (chỉ mất một phút).
@@ -17,7 +17,7 @@ App không ký bằng chứng chỉ trả phí nên lần mở đầu Windows / 
 
 Actions Recorder miễn phí cho mọi người. Nếu app giúp bạn tiết kiệm thời gian, bạn có thể ủng hộ để dự án được duy trì:
 
-DONATE_LINKS
+[![PayPal](https://img.shields.io/badge/PayPal-Donate-00457C?logo=paypal&logoColor=white)](https://paypal.me/luongnd)
 
 Hoặc đơn giản là ⭐ star repo và giới thiệu cho bạn bè. Cảm ơn bạn!
 

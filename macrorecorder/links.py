@@ -1,6 +1,6 @@
 """Project links shown in the app (About, Support, Help). Edit here only."""
 
-GITHUB_OWNER = "OWNER"
+GITHUB_OWNER = "duyluonglc"
 GITHUB_REPO = "actions-recorder"
 
 REPO_URL = f"https://github.com/{GITHUB_OWNER}/{GITHUB_REPO}"
@@ -12,9 +12,9 @@ USER_GUIDE_URL = f"{REPO_URL}#readme"
 
 # (name, url) — channels that are empty are hidden in the app
 DONATE = [
-    ("PayPal", "https://paypal.me/PAYPAL_NAME"),
-    ("Buy Me a Coffee", "https://buymeacoffee.com/BMC_NAME"),
-    ("GitHub Sponsors", f"https://github.com/sponsors/{GITHUB_OWNER}"),
+    ("PayPal", "https://paypal.me/luongnd"),
+    ("Buy Me a Coffee", ""),
+    ("GitHub Sponsors", ""),
 ]
 
 

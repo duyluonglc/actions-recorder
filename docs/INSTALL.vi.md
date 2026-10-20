@@ -2,7 +2,7 @@
 
 [English](INSTALL.md)
 
-Tải tệp phù hợp với máy của bạn tại **[bản phát hành mới nhất](https://github.com/OWNER/actions-recorder/releases/latest)**:
+Tải tệp phù hợp với máy của bạn tại **[bản phát hành mới nhất](https://github.com/duyluonglc/actions-recorder/releases/latest)**:
 
 | Máy | Tệp |
 |---|---|
@@ -98,7 +98,7 @@ bấm **−** để xoá, rồi bấm **Cho phép…** lại trong cửa sổ Ch
 
 ## Kiểm tra bản cài đặt
 
-Chạy chức năng tự kiểm tra và đính kèm kết quả khi [báo lỗi](https://github.com/OWNER/actions-recorder/issues):
+Chạy chức năng tự kiểm tra và đính kèm kết quả khi [báo lỗi](https://github.com/duyluonglc/actions-recorder/issues):
 
 - Windows (Command Prompt, trong thư mục app):
   `"Actions Recorder.exe" --self-test report.txt` → rồi mở `report.txt`
@@ -114,7 +114,7 @@ Ollama để mọi thứ vẫn ngoại tuyến).
 ## Chạy từ mã nguồn
 
 ```bash
-git clone https://github.com/OWNER/actions-recorder.git
+git clone https://github.com/duyluonglc/actions-recorder.git
 cd actions-recorder
 python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt        # Windows: .venv\Scripts\pip ...

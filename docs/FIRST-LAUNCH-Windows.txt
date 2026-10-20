@@ -17,7 +17,7 @@ programs treat as suspicious. Actions Recorder keeps everything on your
 computer. Add the folder as an exclusion, or download again from the official
 GitHub Releases page.
 
-Full guide: https://github.com/OWNER/actions-recorder/blob/main/docs/INSTALL.md
+Full guide: https://github.com/duyluonglc/actions-recorder/blob/main/docs/INSTALL.md
 
 
 ACTIONS RECORDER — MỞ LẦN ĐẦU TRÊN WINDOWS
@@ -38,4 +38,4 @@ Antivirus cảnh báo? Công cụ macro phải ghi bàn phím nên một số ph
 virus nghi ngờ. Actions Recorder chỉ lưu mọi thứ trên máy bạn. Hãy thêm thư mục
 vào danh sách loại trừ, hoặc tải lại từ trang GitHub Releases chính thức.
 
-Hướng dẫn đầy đủ: https://github.com/OWNER/actions-recorder/blob/main/docs/INSTALL.vi.md
+Hướng dẫn đầy đủ: https://github.com/duyluonglc/actions-recorder/blob/main/docs/INSTALL.vi.md
