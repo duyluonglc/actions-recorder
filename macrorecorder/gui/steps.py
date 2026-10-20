@@ -33,6 +33,7 @@ class StepModel(QAbstractListModel):
         super().__init__()
         self.actions: list[Action] = []
         self.current = -1
+        self.locked = False
         self.depth: list[int] = []
         self.group_of: list[int] = []
 
@@ -69,6 +70,8 @@ class StepModel(QAbstractListModel):
         return 0 if parent.isValid() else len(self.actions)
 
     def flags(self, index):
+        if self.locked:                   # recording / running: look, don't touch
+            return Qt.ItemIsEnabled | Qt.ItemIsSelectable if index.isValid() else Qt.NoItemFlags
         if not index.isValid():
             return Qt.ItemIsDropEnabled
         return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsDragEnabled
@@ -115,6 +118,8 @@ class StepModel(QAbstractListModel):
         return Qt.MoveAction
 
     def dropMimeData(self, data, action, row, column, parent):
+        if self.locked:
+            return False
         if row < 0:
             row = parent.row() if parent.isValid() else len(self.actions)
         if data.hasFormat(NEW_MIME):

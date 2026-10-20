@@ -42,6 +42,7 @@ Or simply ⭐ star the repository and tell a friend. Thank you!
 - **Target window**: make a macro work inside one application window. The window is brought to the front
   automatically and positions are measured from its top-left corner, so the macro keeps working when the window
   moves or sits on another monitor. Pick the window right from the **Record** button (or *Record in a window…*) to record directly in window coordinates.
+- **Live recording view** – recorded steps appear while you record, scrolled to the newest one; steps are locked while recording or running.
 - **Record only what will be replayed** – optionally leave out step types that are turned off in *Run options* (e.g. mouse movements or pauses).
 - **Launch app & wait for window**: start a program and continue only when its window has appeared.
 - **Multiple monitors**: recording, replay, image search and OCR work across all screens (including screens left

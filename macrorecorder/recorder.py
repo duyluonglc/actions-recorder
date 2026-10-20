@@ -150,6 +150,13 @@ class InputHub:
             raw = strip_trailing_click(raw)
         return build_actions(raw, self._opts)
 
+    def preview(self) -> tuple[int, list[Action]]:
+        """Number of raw events so far and the steps they would become."""
+        with self._lock:
+            raw = list(self._raw)
+            opts = self._opts
+        return len(raw), build_actions(raw, opts) if raw else []
+
     def _stop_mouse(self) -> None:
         if self._mouse:
             self._mouse.stop()

@@ -10,7 +10,7 @@ import threading
 from PySide6.QtCore import (QDateTime, QItemSelection, QItemSelectionModel, QObject, Qt, QTimer, QTranslator,
                             QUrl, Signal)
 from PySide6.QtGui import QAction, QColor, QDesktopServices, QGuiApplication, QKeySequence, QPalette
-from PySide6.QtWidgets import (QApplication, QFileDialog, QInputDialog, QLabel, QMainWindow, QMenu, QMessageBox,
+from PySide6.QtWidgets import (QAbstractItemView, QApplication, QFileDialog, QInputDialog, QLabel, QMainWindow, QMenu, QMessageBox,
                                QProgressDialog, QSplitter, QStackedWidget, QStyleFactory, QSystemTrayIcon,
                                QVBoxLayout, QWidget)
 
@@ -183,6 +183,10 @@ class MainWindow(QMainWindow):
         self.ui.sig_finished.connect(self.on_finished)
         self.ui.sig_request.connect(self.on_request)
         self.engine = Engine(self.ui)
+        self.preview_timer = QTimer(self)
+        self.preview_timer.setInterval(300)
+        self.preview_timer.timeout.connect(self._update_preview)
+        self._preview_n = -1
         self.marker = Marker()
         self.status = StatusBar()
         self.status.stop_clicked.connect(lambda: self.stop(via_ui=True))
@@ -518,7 +522,7 @@ class MainWindow(QMainWindow):
         self.header.variables.setChecked(v)
 
     def apply_inspector(self, row: int, action: Action):
-        if 0 <= row < len(self.macro.actions):
+        if 0 <= row < len(self.macro.actions) and not self.busy:
             new = list(self.macro.actions)
             new[row] = action
             self.set_actions(new, [row])
@@ -623,7 +627,14 @@ class MainWindow(QMainWindow):
             a.setEnabled(not busy and sel)
         self.a_undo.setEnabled(not busy and bool(self.undo_stack))
         self.a_redo.setEnabled(not busy and bool(self.redo_stack))
-        self.view.setEnabled(not rec)
+        self.model.locked = busy
+        self.view.setDragEnabled(not busy)
+        self.view.setAcceptDrops(not busy)
+        self.view.setSelectionMode(QAbstractItemView.NoSelection if rec else QAbstractItemView.ExtendedSelection)
+        self.library.setEnabled(not busy)
+        self.target_bar.setEnabled(not busy)
+        self.a_target.setEnabled(not busy)
+        self.a_record_window.setEnabled(not busy)
         h = self.header
         h.record.setText("■  " + tr("Stop recording") if rec else "●  " + tr("Record"))
         h.record.setEnabled(not play)
@@ -701,7 +712,10 @@ class MainWindow(QMainWindow):
         rows = self.selected_rows()
         new_row = rows[0] if len(rows) == 1 else -1
         insp = self.inspector
-        if insp.row >= 0 and insp.row != new_row and insp.dirty() and insp.row < len(self.macro.actions):
+        if self.hub.recording:
+            return
+        if (insp.row >= 0 and insp.row != new_row and insp.dirty() and insp.row < len(self.macro.actions)
+                and not self.busy):
             # keep unapplied edits when the user moves on to another step
             pending, r = insp.editor.result_action(), insp.row
             insp.show_action(-1, None, [])
@@ -758,6 +772,8 @@ class MainWindow(QMainWindow):
         pass
 
     def on_double_click(self, idx):
+        if self.busy:
+            return
         a = self.macro.actions[idx.row()]
         if a.kind == "group":
             self.push_undo()
@@ -1021,11 +1037,34 @@ class MainWindow(QMainWindow):
                 if w is not None:
                     winmgr.activate(w)
         self.hub.start_recording(settings, t)
+        self.view.clearSelection()
+        self.inspector.show_action(-1, None, [])
+        self._preview_n = -1
+        self.preview_timer.start()
         self.status_text("● " + tr("Recording") + " — 0 " + tr("events"))
         self.refresh_actions()
         self.statusBar().showMessage(tr("Recording…"))
 
+    def _update_preview(self):
+        """Show the steps recorded so far, scrolled to the newest one."""
+        if not self.hub.recording:
+            self.preview_timer.stop()
+            return
+        n, acts = self.hub.preview()
+        if n == self._preview_n:
+            return
+        self._preview_n = n
+        at = len(self.macro.actions) if self.record_at is None else self.record_at
+        base = [] if self.record_at is None else self.macro.actions
+        self.model.set_actions(base[:at] + acts + base[at:])
+        self.stack.setCurrentIndex(1)
+        if acts:
+            self.model.set_current(at + len(acts) - 1)
+            self.view.scrollTo(self.model.index(at + len(acts) - 1, 0), QAbstractItemView.PositionAtBottom)
+
     def _finish_record(self, via_ui: bool):
+        self.preview_timer.stop()
+        self.model.set_current(-1)
         acts = self.hub.stop_recording(strip_last_click=via_ui)
         if self.record_at is None:
             self.push_undo()
