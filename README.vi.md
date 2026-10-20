@@ -6,6 +6,8 @@
 
 Ứng dụng **miễn phí, mã nguồn mở** để ghi, chỉnh sửa và chạy lại macro chuột & bàn phím trên **Windows** và **macOS**. Giao diện tiếng Việt và tiếng Anh.
 
+<p align="center"><img src="docs/screenshots/main-vi-dark.png" alt="Cửa sổ chính Actions Recorder" width="900"></p>
+
 ## Tải về
 
 **[⬇ Tải bản mới nhất](https://github.com/duyluonglc/actions-recorder/releases/latest)** — Windows (`.zip`), Mac chip Apple và Mac Intel (`.dmg`).
@@ -20,6 +22,10 @@ Actions Recorder miễn phí cho mọi người. Nếu app giúp bạn tiết ki
 [![Donate $5](https://img.shields.io/badge/Donate-%245-00457C?logo=paypal&logoColor=white)](https://paypal.me/luongnd/5USD) [![Donate $10](https://img.shields.io/badge/Donate-%2410-00457C?logo=paypal&logoColor=white)](https://paypal.me/luongnd/10USD) [![PayPal](https://img.shields.io/badge/PayPal-any%20amount-00457C?logo=paypal&logoColor=white)](https://paypal.me/luongnd) [![GitHub Sponsors](https://img.shields.io/badge/GitHub%20Sponsors-Sponsor-EA4AAA?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/duyluonglc)
 
 Hoặc đơn giản là ⭐ star repo và giới thiệu cho bạn bè. Cảm ơn bạn!
+
+## Ảnh chụp màn hình
+
+<table><tr><td align="center" width="50%"><a href="docs/screenshots/run-options-vi-dark.png"><img src="docs/screenshots/run-options-vi-dark.png" alt="Tuỳ chọn chạy: loại bước, cách di chuyển con trỏ, lặp"></a><br><sub>Tuỳ chọn chạy: loại bước, cách di chuyển con trỏ, lặp</sub></td><td align="center" width="50%"><a href="docs/screenshots/setup-vi-dark.png"><img src="docs/screenshots/setup-vi-dark.png" alt="Mở lần đầu trên macOS: cấp quyền, trạng thái cập nhật trực tiếp"></a><br><sub>Mở lần đầu trên macOS: cấp quyền, trạng thái cập nhật trực tiếp</sub></td></tr><tr><td align="center" width="50%"><a href="docs/screenshots/preferences-vi-dark.png"><img src="docs/screenshots/preferences-vi-dark.png" alt="Tuỳ chọn: phím tắt toàn cục F9–F12, đổi được"></a><br><sub>Tuỳ chọn: phím tắt toàn cục F9–F12, đổi được</sub></td><td align="center" width="50%"><a href="docs/screenshots/main-en-light.png"><img src="docs/screenshots/main-en-light.png" alt="Giao diện sáng (tiếng Anh)"></a><br><sub>Giao diện sáng (tiếng Anh)</sub></td></tr></table>
 
 ## Giao diện
 

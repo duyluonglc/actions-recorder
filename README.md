@@ -8,6 +8,8 @@ A **free and open-source** tool to record, edit and replay mouse & keyboard acti
 Capture what you do once, fine-tune the steps, then let them run for you — with image search, text recognition
 (OCR), variables, conditions, loops, a scheduler and optional AI steps.
 
+<p align="center"><img src="docs/screenshots/main-en-dark.png" alt="Actions Recorder main window" width="900"></p>
+
 ## Download
 
 **[⬇ Download the latest release](https://github.com/duyluonglc/actions-recorder/releases/latest)** — Windows (`.zip`),
@@ -40,6 +42,10 @@ Or simply ⭐ star the repository and tell a friend. Thank you!
 - **Global shortcuts**: F9 record, F10 run, F11 stop, F12 pause (configurable), shown on the buttons.
 - **Scheduler**, variable explorer, tray icon, command line (`--play`), launcher files, CSV export,
   English & Vietnamese UI, light & dark themes.
+
+## Screenshots
+
+<table><tr><td align="center" width="50%"><a href="docs/screenshots/main-en-light.png"><img src="docs/screenshots/main-en-light.png" alt="Light theme: step library, step list and properties"></a><br><sub>Light theme: step library, step list and properties</sub></td><td align="center" width="50%"><a href="docs/screenshots/run-options-en-light.png"><img src="docs/screenshots/run-options-en-light.png" alt="Run options: which steps to replay, cursor movement, looping"></a><br><sub>Run options: which steps to replay, cursor movement, looping</sub></td></tr><tr><td align="center" width="50%"><a href="docs/screenshots/setup-en-light.png"><img src="docs/screenshots/setup-en-light.png" alt="First launch on macOS: permissions with live status"></a><br><sub>First launch on macOS: permissions with live status</sub></td><td align="center" width="50%"><a href="docs/screenshots/preferences-en-dark.png"><img src="docs/screenshots/preferences-en-dark.png" alt="Preferences: global shortcuts F9–F12, all configurable"></a><br><sub>Preferences: global shortcuts F9–F12, all configurable</sub></td></tr></table>
 
 ## Privacy
 

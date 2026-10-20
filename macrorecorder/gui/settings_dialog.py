@@ -144,7 +144,7 @@ class SettingsDialog(QDialog):
         for name, label, _ in HOTKEYS:
             fld = HotkeyField(self.store.get(f"hotkey/{name}"))
             self.hk[name] = fld
-            f.addRow(tr(label), fld)
+            f.addRow(tr(label).replace("&", "&&"), fld)
         return w
 
     def _appearance(self) -> QWidget:
