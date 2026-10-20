@@ -20,7 +20,7 @@ a few permissions. 👉 **Read the [installation & permissions guide](docs/INSTA
 
 Actions Recorder is free for everyone. If it saves you time, you can support its development:
 
-[![PayPal](https://img.shields.io/badge/PayPal-Donate-00457C?logo=paypal&logoColor=white)](https://paypal.me/luongnd)
+[![Donate $5](https://img.shields.io/badge/Donate-%245-00457C?logo=paypal&logoColor=white)](https://paypal.me/luongnd/5USD) [![Donate $10](https://img.shields.io/badge/Donate-%2410-00457C?logo=paypal&logoColor=white)](https://paypal.me/luongnd/10USD) [![PayPal](https://img.shields.io/badge/PayPal-any%20amount-00457C?logo=paypal&logoColor=white)](https://paypal.me/luongnd) [![GitHub Sponsors](https://img.shields.io/badge/GitHub%20Sponsors-Sponsor-EA4AAA?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/duyluonglc)
 
 Or simply ⭐ star the repository and tell a friend. Thank you!
 

@@ -1,6 +1,6 @@
 """Fill in the project's GitHub owner and donation accounts everywhere.
 
-    python tools/set_links.py --owner myname --paypal myname --bmc myname [--sponsors]
+    python tools/set_links.py --owner myname --paypal myname [--amounts 5,10] [--sponsors]
 
 Re-running is safe: the previous values are remembered in tools/links.json.
 """
@@ -15,14 +15,14 @@ FILES = ["README.md", "README.vi.md", "docs/INSTALL.md", "docs/INSTALL.vi.md", "
 STATE = os.path.join(ROOT, "tools", "links.json")
 
 
-def badges(owner: str, paypal: str, bmc: str, sponsors: bool) -> str:
+def badges(owner: str, paypal: str, sponsors: bool, amounts: list[int]) -> str:
     out = []
     if paypal:
-        out.append(f"[![PayPal](https://img.shields.io/badge/PayPal-Donate-00457C?logo=paypal&logoColor=white)]"
+        for amt in amounts:
+            out.append(f"[![Donate ${amt}](https://img.shields.io/badge/Donate-%24{amt}-00457C?logo=paypal&logoColor=white)]"
+                       f"(https://paypal.me/{paypal}/{amt}USD)")
+        out.append(f"[![PayPal](https://img.shields.io/badge/PayPal-any%20amount-00457C?logo=paypal&logoColor=white)]"
                    f"(https://paypal.me/{paypal})")
-    if bmc:
-        out.append(f"[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-Support-FFDD00"
-                   f"?logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/{bmc})")
     if sponsors:
         out.append(f"[![GitHub Sponsors](https://img.shields.io/badge/GitHub%20Sponsors-Sponsor-EA4AAA"
                    f"?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/{owner})")
@@ -34,7 +34,7 @@ def main():
     ap.add_argument("--owner", required=True, help="GitHub user or organisation")
     ap.add_argument("--repo", default="actions-recorder")
     ap.add_argument("--paypal", default="", help="paypal.me name")
-    ap.add_argument("--bmc", default="", help="buymeacoffee.com name")
+    ap.add_argument("--amounts", default="5,10", help="quick PayPal amounts in USD, e.g. 5,10")
     ap.add_argument("--sponsors", action="store_true", help="GitHub Sponsors is enabled for --owner")
     a = ap.parse_args()
 
@@ -42,7 +42,8 @@ def main():
     old_owner = prev.get("owner", "OWNER")
     old_repo = prev.get("repo", "actions-recorder")
     old_badges = prev.get("badges", "DONATE_LINKS")
-    new_badges = badges(a.owner, a.paypal, a.bmc, a.sponsors)
+    amounts = [int(x) for x in a.amounts.split(",") if x.strip()]
+    new_badges = badges(a.owner, a.paypal, a.sponsors, amounts)
     for rel in FILES:
         p = os.path.join(ROOT, rel)
         s = open(p, encoding="utf-8").read()
@@ -51,18 +52,13 @@ def main():
         if rel.endswith("links.py"):
             s = re.sub(r'GITHUB_OWNER = ".*?"', f'GITHUB_OWNER = "{a.owner}"', s)
             s = re.sub(r'GITHUB_REPO = ".*?"', f'GITHUB_REPO = "{a.repo}"', s)
-            s = re.sub(r'\("PayPal", ".*?"\)', f'("PayPal", "{"https://paypal.me/" + a.paypal if a.paypal else ""}")', s)
-            s = re.sub(r'\("Buy Me a Coffee", ".*?"\)',
-                       f'("Buy Me a Coffee", "{"https://buymeacoffee.com/" + a.bmc if a.bmc else ""}")', s)
-            s = re.sub(r'\("GitHub Sponsors", .*?\)',
-                       '("GitHub Sponsors", f"https://github.com/sponsors/{GITHUB_OWNER}")' if a.sponsors
-                       else '("GitHub Sponsors", "")', s)
+            s = re.sub(r'PAYPAL_ME = ".*?"', f'PAYPAL_ME = "{a.paypal}"', s)
+            s = re.sub(r'DONATE_AMOUNTS = \(.*?\)', f'DONATE_AMOUNTS = ({", ".join(map(str, amounts))}{"," if len(amounts) == 1 else ""})', s)
+            s = re.sub(r'GITHUB_SPONSORS = \w+', f'GITHUB_SPONSORS = {a.sponsors}', s)
         open(p, "w", encoding="utf-8").write(s)
     funding = []
     if a.sponsors:
         funding.append(f"github: [{a.owner}]")
-    if a.bmc:
-        funding.append(f"buy_me_a_coffee: {a.bmc}")
     if a.paypal:
         funding.append(f"custom: [\"https://paypal.me/{a.paypal}\"]")
     os.makedirs(os.path.join(ROOT, ".github"), exist_ok=True)

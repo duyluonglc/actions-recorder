@@ -17,7 +17,7 @@ App không ký bằng chứng chỉ trả phí nên lần mở đầu Windows / 
 
 Actions Recorder miễn phí cho mọi người. Nếu app giúp bạn tiết kiệm thời gian, bạn có thể ủng hộ để dự án được duy trì:
 
-[![PayPal](https://img.shields.io/badge/PayPal-Donate-00457C?logo=paypal&logoColor=white)](https://paypal.me/luongnd)
+[![Donate $5](https://img.shields.io/badge/Donate-%245-00457C?logo=paypal&logoColor=white)](https://paypal.me/luongnd/5USD) [![Donate $10](https://img.shields.io/badge/Donate-%2410-00457C?logo=paypal&logoColor=white)](https://paypal.me/luongnd/10USD) [![PayPal](https://img.shields.io/badge/PayPal-any%20amount-00457C?logo=paypal&logoColor=white)](https://paypal.me/luongnd) [![GitHub Sponsors](https://img.shields.io/badge/GitHub%20Sponsors-Sponsor-EA4AAA?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/duyluonglc)
 
 Hoặc đơn giản là ⭐ star repo và giới thiệu cho bạn bè. Cảm ơn bạn!
 

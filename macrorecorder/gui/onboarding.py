@@ -207,13 +207,32 @@ class SupportDialog(QDialog):
         text.setWordWrap(True)
         text.setAlignment(Qt.AlignCenter)
         lay.addWidget(text)
-        donate = links.donate_links()
-        for name, url in donate:
-            b = QPushButton(f"{tr('Donate via')} {name}")
+        options = links.donate_options()
+
+        def opener(u):
+            return lambda _=False: QDesktopServices.openUrl(QUrl(u))
+
+        quick = [o for o in options if o[0] == "amount"]
+        if quick:
+            row_q = QHBoxLayout()
+            for i, (_, label, url) in enumerate(quick):
+                b = QPushButton(("☕ " if i == 0 else "🍕 ") + label)
+                b.setObjectName("pillRun")
+                b.setMinimumHeight(40)
+                b.setToolTip(tr("Opens PayPal with this amount filled in"))
+                b.clicked.connect(opener(url))
+                row_q.addWidget(b)
+            lay.addLayout(row_q)
+        for kind, label, url in options:
+            if kind == "amount":
+                continue
+            text = tr("PayPal — choose an amount") if kind == "paypal" else \
+                tr("GitHub Sponsors — monthly or one-time")
+            b = QPushButton(text)
             b.setMinimumHeight(34)
-            b.clicked.connect(lambda _=False, u=url: QDesktopServices.openUrl(QUrl(u)))
+            b.clicked.connect(opener(url))
             lay.addWidget(b)
-        if not donate:
+        if not options:
             lay.addWidget(QLabel(tr("Donation links are not configured yet.")))
         row = QHBoxLayout()
         for label, url in ((tr("⭐ Star on GitHub"), links.REPO_URL), (tr("Report a problem"), links.ISSUES_URL)):

@@ -369,3 +369,8 @@ VI.update({
     "Free and open source software, MIT license.": "Phần mềm miễn phí, mã nguồn mở, giấy phép MIT.",
     "Project page on GitHub": "Trang dự án trên GitHub", "Download the latest version": "Tải phiên bản mới nhất",
 })
+VI.update({
+    "Opens PayPal with this amount filled in": "Mở PayPal với số tiền này điền sẵn",
+    "PayPal — choose an amount": "PayPal — tự chọn số tiền",
+    "GitHub Sponsors — monthly or one-time": "GitHub Sponsors — hằng tháng hoặc một lần",
+})
