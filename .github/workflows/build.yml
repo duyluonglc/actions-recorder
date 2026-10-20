@@ -1,0 +1,96 @@
+name: Build & release
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: ${{ matrix.label }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            label: Windows-x64
+          - os: macos-latest          # Apple Silicon
+            label: macOS-AppleSilicon
+          - os: macos-15-intel        # Intel
+            label: macOS-Intel
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Version
+        shell: bash
+        run: |
+          BASE=$(python -c "import re;print(re.search(r'__version__ = \"(.+?)\"', open('macrorecorder/__init__.py').read()).group(1))")
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then V="${GITHUB_REF#refs/tags/v}"; else V="$BASE-dev.${GITHUB_RUN_NUMBER}"; fi
+          echo "VERSION=$V" >> "$GITHUB_ENV"
+          # the version shown inside the app follows the tag
+          python -c "import re,sys;p='macrorecorder/__init__.py';s=open(p).read();open(p,'w').write(re.sub(r'__version__ = \".*?\"', '__version__ = \"'+sys.argv[1]+'\"', s))" "$V"
+          echo "Building $V"
+
+      - name: Unit tests
+        shell: bash
+        run: |
+          python -m pip install -q -r requirements.txt
+          python -m unittest discover -s tests -v
+
+      - name: Build (Windows)
+        if: runner.os == 'Windows'
+        shell: cmd
+        run: build_windows.bat
+
+      - name: Build (macOS)
+        if: runner.os == 'macOS'
+        run: ./build_macos.sh
+
+      - name: Self-test of the packaged app (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $p = Start-Process -FilePath "dist\Actions Recorder\Actions Recorder.exe" -ArgumentList "--self-test", "$PWD\selftest.txt" -Wait -PassThru
+          Get-Content selftest.txt
+          if ($p.ExitCode -ne 0) { exit 1 }
+
+      - name: Self-test of the packaged app (macOS)
+        if: runner.os == 'macOS'
+        run: '"dist/Actions Recorder.app/Contents/MacOS/Actions Recorder" --self-test'
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ActionsRecorder-${{ matrix.label }}
+          path: |
+            dist/*.zip
+            dist/*.dmg
+          if-no-files-found: error
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Checksums
+        run: cd dist && sha256sum * > SHA256SUMS.txt && cat SHA256SUMS.txt
+      - uses: softprops/action-gh-release@v2
+        with:
+          name: Actions Recorder ${{ github.ref_name }}
+          body_path: .github/release-notes.md
+          files: dist/*
+          generate_release_notes: true

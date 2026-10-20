@@ -1,0 +1,52 @@
+ACTIONS RECORDER — FIRST LAUNCH ON macOS
+=========================================
+
+1. Drag "Actions Recorder" onto the "Applications" folder.
+
+2. Open it once. Because the app is free and not signed with a paid Apple
+   Developer certificate, macOS shows a warning the first time:
+   - Click "Done" (do NOT move it to the Bin).
+   - Open System Settings > Privacy & Security, scroll down and click
+     "Open Anyway" next to "Actions Recorder", then confirm with your password.
+   (macOS 14 and older: right-click the app > Open > Open.)
+
+3. Grant the permissions shown in the welcome window:
+   - Accessibility       - to replay clicks and key presses
+   - Input Monitoring    - to record and for the F9 / F10 shortcuts
+   - Screen Recording    - only for image search / OCR / AI screen steps
+   Then click "Restart app".
+
+Still blocked or "damaged"? Run in Terminal:
+   xattr -dr com.apple.quarantine "/Applications/Actions Recorder.app"
+
+After updating to a new version, macOS may forget the permissions: remove
+Actions Recorder from those lists with the "-" button and allow it again.
+
+Full guide: https://github.com/OWNER/actions-recorder/blob/main/docs/INSTALL.md
+
+
+ACTIONS RECORDER — MỞ LẦN ĐẦU TRÊN macOS
+=========================================
+
+1. Kéo "Actions Recorder" vào thư mục "Applications".
+
+2. Mở app một lần. Vì app miễn phí và không ký bằng chứng chỉ Apple Developer
+   trả phí, lần đầu macOS sẽ cảnh báo:
+   - Bấm "Done / Xong" (KHÔNG chọn chuyển vào Thùng rác).
+   - Mở System Settings > Privacy & Security (Quyền riêng tư & Bảo mật),
+     kéo xuống, bấm "Open Anyway / Vẫn mở" cạnh "Actions Recorder", nhập mật khẩu.
+   (macOS 14 trở về trước: chuột phải vào app > Open > Open.)
+
+3. Cấp các quyền trong cửa sổ chào mừng:
+   - Accessibility (Trợ năng)              - để phát lại click và phím
+   - Input Monitoring (Giám sát đầu vào)   - để ghi và dùng phím tắt F9 / F10
+   - Screen Recording (Ghi màn hình)       - chỉ cho tìm ảnh / OCR / AI
+   Rồi bấm "Khởi động lại app".
+
+Vẫn bị chặn hoặc báo "bị hỏng" (damaged)? Chạy trong Terminal:
+   xattr -dr com.apple.quarantine "/Applications/Actions Recorder.app"
+
+Sau khi cập nhật phiên bản mới, macOS có thể "quên" quyền: xoá Actions Recorder
+khỏi các danh sách trên bằng nút "-" rồi cấp lại.
+
+Hướng dẫn đầy đủ: https://github.com/OWNER/actions-recorder/blob/main/docs/INSTALL.vi.md

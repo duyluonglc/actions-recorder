@@ -1,0 +1,41 @@
+ACTIONS RECORDER — FIRST LAUNCH ON WINDOWS
+==========================================
+
+1. Unzip the whole folder first (right-click the .zip > Extract All...).
+   Do not run the app from inside the zip.
+
+2. Double-click "Actions Recorder.exe".
+   The app is free and not signed with a paid code-signing certificate, so
+   Windows SmartScreen may show "Windows protected your PC":
+   click "More info" > "Run anyway". This is needed only once.
+
+3. No other permissions are needed. To control programs that run as
+   administrator, right-click "Actions Recorder.exe" > Run as administrator.
+
+Antivirus warning? Macro tools record the keyboard, which some antivirus
+programs treat as suspicious. Actions Recorder keeps everything on your
+computer. Add the folder as an exclusion, or download again from the official
+GitHub Releases page.
+
+Full guide: https://github.com/OWNER/actions-recorder/blob/main/docs/INSTALL.md
+
+
+ACTIONS RECORDER — MỞ LẦN ĐẦU TRÊN WINDOWS
+==========================================
+
+1. Giải nén toàn bộ thư mục trước (chuột phải tệp .zip > Extract All...).
+   Không chạy app trực tiếp bên trong tệp zip.
+
+2. Nhấp đúp "Actions Recorder.exe".
+   App miễn phí, không ký bằng chứng chỉ trả phí nên Windows SmartScreen có thể
+   hiện "Windows protected your PC": bấm "More info" (Thông tin thêm) >
+   "Run anyway" (Vẫn chạy). Chỉ cần làm một lần.
+
+3. Không cần cấp quyền nào khác. Muốn điều khiển chương trình chạy bằng quyền
+   quản trị: chuột phải "Actions Recorder.exe" > Run as administrator.
+
+Antivirus cảnh báo? Công cụ macro phải ghi bàn phím nên một số phần mềm diệt
+virus nghi ngờ. Actions Recorder chỉ lưu mọi thứ trên máy bạn. Hãy thêm thư mục
+vào danh sách loại trừ, hoặc tải lại từ trang GitHub Releases chính thức.
+
+Hướng dẫn đầy đủ: https://github.com/OWNER/actions-recorder/blob/main/docs/INSTALL.vi.md
