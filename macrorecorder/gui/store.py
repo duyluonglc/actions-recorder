@@ -6,6 +6,7 @@ import json
 
 from PySide6.QtCore import QSettings
 
+from ..actions import FILTER_GROUPS
 from ..ai import PROVIDERS, AIConfig
 from ..engine import PlaySettings
 from ..recorder import RecordSettings
@@ -26,7 +27,7 @@ DEFAULTS: dict = {
     # recording
     "record/paths": True, "record/min_move": 5, "record/sensitivity": 90,
     "record/ignore_mod_repeat": True, "record/combine_text": True, "record/min_wait": 100,
-    "record/focus": True,
+    "record/focus": True, "record/skip_off": False,
     # playback (settings dialog)
     "play/block_keys": False, "play/abort_key": False, "play/abort_mouse": False,
     "play/restore_mouse": False, "play/restore_windows": False, "play/relative": False,
@@ -93,7 +94,8 @@ class Store:
         return RecordSettings(record_paths=g("record/paths"), min_move_px=g("record/min_move"),
                               sensitivity=g("record/sensitivity"), ignore_mod_repeat=g("record/ignore_mod_repeat"),
                               combine_text=g("record/combine_text"), min_wait_ms=g("record/min_wait"),
-                              record_focus=g("record/focus"))
+                              record_focus=g("record/focus"),
+                              skip=tuple(k for k in FILTER_GROUPS if g("record/skip_off") and not g(f"bar/{k}")))
 
     def play_settings(self) -> PlaySettings:
         g = self.get

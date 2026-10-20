@@ -13,7 +13,7 @@ from typing import Callable
 from pynput import keyboard, mouse
 
 from . import keys
-from .actions import Action
+from .actions import FILTER_GROUPS, Action
 
 BUTTON_NAMES = {mouse.Button.left: "left", mouse.Button.right: "right", mouse.Button.middle: "middle"}
 
@@ -36,6 +36,7 @@ class RecordSettings:
     record_focus: bool = True
     record_clicks: bool = True
     record_keys: bool = True
+    skip: tuple = ()                 # FILTER_GROUPS names whose steps are left out
 
     @property
     def sample_ms(self) -> float:
@@ -279,7 +280,24 @@ def strip_trailing_click(raw: list[Raw]) -> list[Raw]:
 def build_actions(raw: list[Raw], o: RecordSettings) -> list[Action]:
     b = _Builder(o)
     b.run(raw)
-    return b.out
+    return drop_groups(b.out, o.skip)
+
+
+def drop_groups(actions: list[Action], groups) -> list[Action]:
+    """Leave out the steps of the given FILTER_GROUPS (the kinds that replay is set
+    to skip); waits that end up next to each other are merged."""
+    kinds = set().union(*(FILTER_GROUPS.get(g, set()) for g in groups)) if groups else set()
+    if not kinds:
+        return actions
+    out: list[Action] = []
+    for a in actions:
+        if a.kind in kinds:
+            continue
+        if a.kind == "wait" and out and out[-1].kind == "wait":
+            out[-1].params["ms"] = str(int(out[-1].params.get("ms", 0)) + int(a.params.get("ms", 0)))
+            continue
+        out.append(a)
+    return out
 
 
 class _Builder:

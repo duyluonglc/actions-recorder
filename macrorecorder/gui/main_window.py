@@ -7,7 +7,7 @@ import os
 import sys
 import threading
 
-from PySide6.QtCore import (QDateTime, QItemSelection, QItemSelectionModel, QObject, QPoint, Qt, QTimer, QTranslator,
+from PySide6.QtCore import (QDateTime, QItemSelection, QItemSelectionModel, QObject, Qt, QTimer, QTranslator,
                             QUrl, Signal)
 from PySide6.QtGui import QAction, QColor, QDesktopServices, QGuiApplication, QKeySequence, QPalette
 from PySide6.QtWidgets import (QApplication, QFileDialog, QInputDialog, QLabel, QMainWindow, QMenu, QMessageBox,
@@ -31,7 +31,7 @@ from .settings_dialog import SettingsDialog
 from .steps import StepList, StepModel
 from .store import Store
 from .target import TargetBar, TargetDialog
-from .workspace import CATEGORY_TITLES, LIBRARY, EmptyState, Header, Inspector, Library, RunOptions
+from .workspace import CATEGORY_TITLES, LIBRARY, EmptyState, Header, Inspector, Library, RecordOptions, RunOptions
 
 FILE_FILTER = f"Macro (*{FILE_EXT} *.json);;All files (*)"
 MAX_UNDO = 200
@@ -357,9 +357,10 @@ class MainWindow(QMainWindow):
         h.run.clicked.connect(self._run_clicked)
         h.stop.clicked.connect(lambda: self.stop(via_ui=True))
         h.pause.clicked.connect(self.toggle_pause)
-        rec_menu = QMenu(self)
-        rec_menu.addActions([self.a_record_new, self.a_record])
-        self.header_rec_menu = rec_menu
+        self.record_options = RecordOptions(self.store, self)
+        self.record_options.start.connect(lambda new: self.record(new=new))
+        self.record_options.choose_target.connect(lambda: (self.choose_target(), self._show_record_options()))
+        self.record_options.clear_target.connect(lambda: (self.clear_target(), self._show_record_options()))
         h.speed.setValue(self.store.get("bar/speed"))
         h.speed.valueChanged.connect(lambda v: self.store.set("bar/speed", v))
         h.loops.setValue(self.store.get("bar/repeat"))
@@ -495,10 +496,12 @@ class MainWindow(QMainWindow):
     def _record_clicked(self):
         if self.hub.recording:
             self.stop(via_ui=True)
-        elif self.macro.actions:
-            self.header_rec_menu.exec(self.header.record.mapToGlobal(QPoint(0, self.header.record.height())))
         else:
-            self.record(new=True)
+            self._show_record_options()
+
+    def _show_record_options(self):
+        if not self.busy:
+            self.record_options.popup_at(self.header.record, self.macro.target, bool(self.macro.actions))
 
     def _run_clicked(self):
         if self.engine.playing:

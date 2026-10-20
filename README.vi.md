@@ -54,7 +54,8 @@ Biến có sẵn: `{date}` `{time}` `{datetime}` `{timestamp}` `{random}` `{mous
 - **Cửa sổ mục tiêu** (*Chạy → Cửa sổ mục tiêu…* hoặc thanh 🎯 phía trên danh sách bước): macro chỉ làm việc trong
   một cửa sổ ứng dụng. Nếu cửa sổ đó không được chọn, app tự đưa nó lên trước; toạ độ tính **tương đối theo góc
   trên-trái của cửa sổ**, nên cửa sổ có bị di chuyển hay nằm ở màn hình khác thì macro vẫn đúng.
-  *Ghi trong một cửa sổ…* ghi thẳng theo toạ độ của cửa sổ. Macro cũ có thể chuyển toạ độ sang cửa sổ chỉ bằng một dấu tick.
+  Chọn cửa sổ ngay khi bấm nút **Ghi** (hoặc *Ghi trong một cửa sổ…*) để ghi thẳng theo toạ độ của cửa sổ. Macro cũ có thể chuyển toạ độ sang cửa sổ chỉ bằng một dấu tick.
+- **Chỉ ghi những gì sẽ chạy:** tuỳ chọn không ghi các loại bước đang tắt trong *Tuỳ chọn chạy* (ví dụ di chuyển chuột, khoảng chờ).
 - **Mở ứng dụng & chờ cửa sổ**: chạy chương trình (đường dẫn hoặc chỉ tên như `Calculator`, `notepad`), chờ cửa sổ
   của nó hiện ra rồi mới làm bước tiếp theo; hết thời gian chờ thì dừng hoặc nhảy tới mốc.
 - **Nhiều màn hình**: ghi, chạy lại, tìm ảnh và OCR hoạt động trên mọi màn hình (kể cả màn hình nằm bên trái hoặc phía

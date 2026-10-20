@@ -104,6 +104,7 @@ class SettingsDialog(QDialog):
         self.min_wait = _spin(0, 60000, self.store.get("record/min_wait"), "ms")
         f.addRow(tr("Create a Wait step for pauses longer than:"), self.min_wait)
         f.addRow(self._check("record/focus", "Note when I switch to another window"))
+        f.addRow(self._check("record/skip_off", "Don't record step types that are turned off in Run options"))
         lay.addWidget(g)
         lay.addStretch(1)
         return w

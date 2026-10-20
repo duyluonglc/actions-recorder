@@ -41,7 +41,8 @@ Or simply ⭐ star the repository and tell a friend. Thank you!
   (prompts, screen analysis, find an object by description — OpenRouter, OpenAI, or local Ollama / LM Studio).
 - **Target window**: make a macro work inside one application window. The window is brought to the front
   automatically and positions are measured from its top-left corner, so the macro keeps working when the window
-  moves or sits on another monitor. *Record in a window…* records directly in window coordinates.
+  moves or sits on another monitor. Pick the window right from the **Record** button (or *Record in a window…*) to record directly in window coordinates.
+- **Record only what will be replayed** – optionally leave out step types that are turned off in *Run options* (e.g. mouse movements or pauses).
 - **Launch app & wait for window**: start a program and continue only when its window has appeared.
 - **Multiple monitors**: recording, replay, image search and OCR work across all screens (including screens left
   of or above the main one), with per-monitor scaling on Windows.

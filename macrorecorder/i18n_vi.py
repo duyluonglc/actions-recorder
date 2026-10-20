@@ -388,6 +388,11 @@ VI.update({
     "Record in a window…": "Ghi trong một cửa sổ…",
     "Works anywhere on the screen": "Hoạt động trên toàn màn hình",
     "Choose a target window…": "Chọn cửa sổ mục tiêu…", "Change…": "Đổi…",
+    "Record in": "Ghi trong", "The whole screen": "Toàn màn hình",
+    "Don't record step types that are turned off in Run options":
+        "Không ghi các loại bước đang tắt trong Tuỳ chọn chạy",
+    "Every step type is turned on, nothing will be skipped.": "Mọi loại bước đều đang bật, không bỏ qua gì.",
+    "Will skip:": "Sẽ bỏ qua:", "Turned off:": "Đang tắt:",
     "Remove the target window": "Bỏ cửa sổ mục tiêu",
     "positions relative to the window": "toạ độ tương đối theo cửa sổ",
     "brought to the front automatically": "tự đưa lên trước",

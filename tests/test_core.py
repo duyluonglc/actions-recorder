@@ -453,3 +453,17 @@ class TestRecorderTarget(unittest.TestCase):
         finally:
             acts = hub.stop_recording()
         self.assertEqual([(a.kind, a.params.get("x"), a.params.get("y")) for a in acts], [("click", 50, 30)])
+
+
+class TestRecordSkip(unittest.TestCase):
+    def test_skipped_groups_are_left_out_and_waits_merged(self):
+        from macrorecorder.recorder import Raw, build_actions
+        raw = [Raw(0, "move", {"x": 0, "y": 0}), Raw(300, "move", {"x": 50, "y": 50}),
+               Raw(600, "down", {"button": "left", "x": 50, "y": 50}),
+               Raw(650, "up", {"button": "left", "x": 50, "y": 50})]
+        kept = build_actions(raw, RecordSettings(record_focus=False))
+        self.assertIn("mouse_path", [a.kind for a in kept])
+        acts = build_actions(raw, RecordSettings(record_focus=False, skip=("mouse_moves",)))
+        self.assertEqual([a.kind for a in acts], ["wait", "click"])
+        acts = build_actions(raw, RecordSettings(record_focus=False, skip=("mouse_moves", "waits")))
+        self.assertEqual([a.kind for a in acts], ["click"])

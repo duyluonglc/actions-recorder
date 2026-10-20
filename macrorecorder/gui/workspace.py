@@ -226,6 +226,88 @@ class RunOptions(QFrame):
         self.show()
 
 
+class RecordOptions(QFrame):
+    """Popup shown by the Record button: target window, what to skip, where to record."""
+
+    choose_target = Signal()
+    clear_target = Signal()
+    start = Signal(bool)            # True = new macro, False = into the current one
+
+    def __init__(self, store, parent=None):
+        super().__init__(parent, Qt.Popup)
+        self.setObjectName("popup")
+        self.store = store
+        lay = QVBoxLayout(self)
+        lay.setContentsMargins(14, 12, 14, 12)
+        head = QLabel(tr("Record in"))
+        head.setObjectName("sectionTitle")
+        lay.addWidget(head)
+        row = QHBoxLayout()
+        self.target = QLabel()
+        self.target.setTextFormat(Qt.RichText)
+        self.change = QPushButton()
+        self.change.setObjectName("flatButton")
+        self.change.clicked.connect(lambda: (self.hide(), self.choose_target.emit()))
+        self.clear = QPushButton("✕")
+        self.clear.setObjectName("flatButton")
+        self.clear.setToolTip(tr("Remove the target window"))
+        self.clear.clicked.connect(lambda: (self.hide(), self.clear_target.emit()))
+        row.addWidget(self.target, 1)
+        row.addWidget(self.change)
+        row.addWidget(self.clear)
+        lay.addLayout(row)
+        lay.addSpacing(6)
+        self.skip = QCheckBox(tr("Don't record step types that are turned off in Run options"))
+        self.skip.setChecked(store.get("record/skip_off"))
+        self.skip.toggled.connect(lambda on: (store.set("record/skip_off", on), self._sync_skip()))
+        self.skipped = QLabel()
+        self.skipped.setObjectName("caption")
+        self.skipped.setWordWrap(True)
+        lay.addWidget(self.skip)
+        lay.addWidget(self.skipped)
+        lay.addSpacing(6)
+        btns = QHBoxLayout()
+        self.new = QPushButton("●  " + tr("Record a new macro"))
+        self.new.setDefault(True)
+        self.into = QPushButton(tr("Record into this macro"))
+        self.new.clicked.connect(lambda: (self.hide(), self.start.emit(True)))
+        self.into.clicked.connect(lambda: (self.hide(), self.start.emit(False)))
+        btns.addWidget(self.new)
+        btns.addWidget(self.into)
+        lay.addLayout(btns)
+
+    def _sync_skip(self) -> None:
+        names = {"mouse_moves": "Mouse movements", "mouse_clicks": "Clicks and wheel", "keys": "Keyboard input",
+                 "waits": "Pauses (Wait steps)", "focus": "Window switching"}
+        off = [tr(names[k]) for k in names if not self.store.get(f"bar/{k}")]
+        if not off:
+            text = tr("Every step type is turned on, nothing will be skipped.")
+        elif self.skip.isChecked():
+            text = tr("Will skip:") + " " + ", ".join(off)
+        else:
+            text = tr("Turned off:") + " " + ", ".join(off)
+        self.skipped.setText(text)
+
+    def popup_at(self, anchor: QWidget, target, has_steps: bool) -> None:
+        if target is None:
+            self.target.setText(f"<span style='color:gray'>{tr('The whole screen')}</span>")
+            self.change.setText(tr("Choose a target window…"))
+            self.clear.hide()
+        else:
+            self.target.setText(f"🎯 <b>{target.describe()}</b>")
+            self.change.setText(tr("Change…"))
+            self.clear.show()
+        self.skip.blockSignals(True)
+        self.skip.setChecked(self.store.get("record/skip_off"))
+        self.skip.blockSignals(False)
+        self._sync_skip()
+        self.into.setVisible(has_steps)
+        self.new.setFocus()
+        self.adjustSize()
+        self.move(anchor.mapToGlobal(anchor.rect().bottomLeft()))
+        self.show()
+
+
 # =================================================================== library
 
 
