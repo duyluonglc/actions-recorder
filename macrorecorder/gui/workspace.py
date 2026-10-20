@@ -36,7 +36,7 @@ LIBRARY = {
              ("capture_image", {}, None), ("read_barcode", {}, None), ("get_pixel", {}, None)],
     "vars": [("set_var", {}, None), ("calc", {}, None), ("read_list", {}, None), ("save_var", {}, None),
              ("web_scrape", {}, None)],
-    "control": [("goto", {}, None), ("goto", {"count": "3"}, "Loop"), ("if", {}, None), ("run_macro", {}, None),
+    "control": [("launch", {}, None), ("goto", {}, None), ("goto", {"count": "3"}, "Loop"), ("if", {}, None), ("run_macro", {}, None),
                 ("execute", {}, None), ("focus", {}, None), ("message", {}, None), ("notify", {}, None),
                 ("beep", {}, None), ("clipboard", {}, None), ("stop", {}, None), ("group", {}, None)],
     "ai": [("ai_prompt", {}, None), ("ai_image", {}, None), ("ai_find", {}, None)],
@@ -317,6 +317,7 @@ class Inspector(QWidget):
         self.setObjectName("inspector")
         self.store, self.marker = store, marker
         self.row = -1
+        self.origin_fn = lambda: None      # set by the window: target-window origin for relative positions
         self.editor: ActionEditor | None = None
         self.original: dict | None = None
         lay = QVBoxLayout(self)
@@ -375,7 +376,8 @@ class Inspector(QWidget):
             self.revert_btn.setEnabled(False)
             return
         self.kind_label.setText(f"{action.spec.icon}  {action.name}   ·   #{row + 1}")
-        self.editor = ActionEditor(action, labels, self.store, self.marker, self._hide, compact=True)
+        self.editor = ActionEditor(action, labels, self.store, self.marker, self._hide, compact=True,
+                                   origin=self.origin_fn)
         holder = QWidget()
         hl = QVBoxLayout(holder)
         hl.setContentsMargins(0, 0, 6, 0)

@@ -298,3 +298,158 @@ class TestEngine(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class FakeWindows:
+    """Stand-in for macrorecorder.winmgr: one window that can move / appear later."""
+
+    def __init__(self, rect=(100, 50, 800, 600), app="Notepad", title="notes.txt", appear_after=0.0):
+        from macrorecorder.winmgr import WinInfo
+        self.win = WinInfo(app, title, rect, handle=1, pid=4242, wid=7)
+        self.active = False
+        self.activations = 0
+        self.t0 = time.monotonic()
+        self.appear_after = appear_after
+
+    def install(self, test):
+        from macrorecorder import winmgr
+        for name in ("find_window", "refresh", "is_active", "activate"):
+            orig = getattr(winmgr, name)
+            setattr(winmgr, name, getattr(self, name))
+            test.addCleanup(setattr, winmgr, name, orig)
+
+    def visible(self):
+        return time.monotonic() - self.t0 >= self.appear_after
+
+    def find_window(self, app="", title=""):
+        return self.win if self.visible() and self.win.matches(app, title) else None
+
+    def refresh(self, w):
+        return self.win if self.visible() else None
+
+    def is_active(self, w):
+        return self.active
+
+    def activate(self, w):
+        self.active = True
+        self.activations += 1
+        return True
+
+
+class TestTargetWindow(unittest.TestCase):
+    def test_relative_click_and_activation(self):
+        from macrorecorder.macro import Target
+        fw = FakeWindows(rect=(100, 50, 800, 600))
+        fw.install(self)
+        m = Macro([Action.new("click", x=10, y=20), Action.new("set_var", var="a", value="1"),
+                   Action.new("click", x=30, y=40)], target=Target("Notepad"))
+        ui, log = UI(), []
+        e = Engine(ui)
+        e.mouse, e.kb = FakeMouse(log), FakeKeyboard(log)
+        fw.win.rect = (100, 50, 800, 600)
+        e.play(m, PlaySettings())
+        time.sleep(0.05)
+        e.wait(10)
+        self.assertEqual(ui.done, (True, None))
+        clicks = [x for x in log if x[0] == "click"]
+        self.assertEqual(clicks[0][3], (110, 70))           # window origin + relative position
+        self.assertEqual(clicks[1][3], (130, 90))
+        self.assertEqual(fw.activations, 1)                  # activated once, then it stays in front
+
+    def test_window_moved_between_steps(self):
+        from macrorecorder.macro import Target
+        fw = FakeWindows(rect=(0, 0, 500, 500))
+        fw.install(self)
+        fw.active = True
+
+        class MoveUI(UI):
+            def progress(self, i, c):
+                if i == 1:
+                    fw.win.rect = (300, 200, 500, 500)
+        log = []
+        e = Engine(MoveUI())
+        e.mouse, e.kb = FakeMouse(log), FakeKeyboard(log)
+        e.play(Macro([Action.new("click", x=5, y=5), Action.new("click", x=5, y=5)], target=Target("Notepad")),
+               PlaySettings())
+        e.wait(10)
+        self.assertEqual([x[3] for x in log if x[0] == "click"], [(5, 5), (305, 205)])
+
+    def test_missing_target_window_fails_clearly(self):
+        from macrorecorder.macro import Target
+        fw = FakeWindows(appear_after=99)
+        fw.install(self)
+        ui = UI()
+        e = Engine(ui)
+        e.mouse, e.kb = FakeMouse([]), FakeKeyboard([])
+        e.play(Macro([Action.new("click", x=1, y=1)], target=Target("Notepad", timeout_ms=300)), PlaySettings())
+        e.wait(10)
+        self.assertFalse(ui.done[0])
+        self.assertIn("Target window not found", ui.done[1])
+
+    def test_launch_waits_for_window(self):
+        from macrorecorder import system
+        fw = FakeWindows(appear_after=0.6, app="TextEdit", title="Untitled")
+        fw.install(self)
+        launched = []
+        orig = system.open_target
+        system.open_target = lambda c, a="", w=False: launched.append((c, a))
+        self.addCleanup(setattr, system, "open_target", orig)
+        ui, log = UI(), []
+        e = Engine(ui)
+        e.mouse, e.kb = FakeMouse(log), FakeKeyboard(log)
+        t = time.monotonic()
+        e.play(Macro([Action.new("launch", command="/Applications/TextEdit.app", settle="0"),
+                      Action.new("notify", text="ready")]), PlaySettings())
+        e.wait(10)
+        self.assertEqual(ui.done, (True, None))
+        self.assertEqual(launched, [("/Applications/TextEdit.app", "")])
+        self.assertGreaterEqual(time.monotonic() - t, 0.55)   # waited for the window
+        self.assertEqual(fw.activations, 1)
+        self.assertEqual(ui.notes, ["ready"])
+
+    def test_launch_timeout_jumps_to_marker(self):
+        from macrorecorder import system
+        fw = FakeWindows(appear_after=99)
+        fw.install(self)
+        orig = system.open_target
+        system.open_target = lambda *a, **k: None
+        self.addCleanup(setattr, system, "open_target", orig)
+        acts = [Action.new("launch", command="foo", timeout="300", on_fail="goto", fail_label="nope"),
+                Action.new("notify", text="started"), Action.new("stop"), Action.new("notify", text="failed")]
+        acts[3].label = "nope"
+        ui = UI()
+        e = Engine(ui)
+        e.mouse, e.kb = FakeMouse([]), FakeKeyboard([])
+        e.play(Macro(acts), PlaySettings())
+        e.wait(10)
+        self.assertEqual(ui.notes, ["failed"])
+
+    def test_target_roundtrip_and_shift(self):
+        from macrorecorder.macro import Target, shift_positions
+        m = Macro([Action.new("click", x=110, y=70),
+                   Action.new("mouse_path", points=[[100, 50, 0], [120, 60, 30]]),
+                   Action.new("find_image", region=[100, 50, 40, 40]), Action.new("click")],
+                  target=Target("Chrome", "Orders", activate=False))
+        m2 = Macro.from_json(m.to_json())
+        self.assertEqual(m2.target.to_dict(), m.target.to_dict())
+        rel = shift_positions(m2.actions, -100, -50)
+        self.assertEqual((rel[0].params["x"], rel[0].params["y"]), (10, 20))
+        self.assertEqual(rel[1].params["points"], [[0, 0, 0], [20, 10, 30]])
+        self.assertEqual(rel[2].params["region"], [0, 0, 40, 40])
+        self.assertIsNone(rel[3].params.get("x"))          # "current position" stays as it is
+
+
+class TestRecorderTarget(unittest.TestCase):
+    def test_positions_recorded_relative_to_window(self):
+        from macrorecorder.macro import Target
+        from macrorecorder.recorder import InputHub
+        fw = FakeWindows(rect=(200, 100, 800, 600))
+        fw.install(self)
+        hub = InputHub()
+        hub.start_recording(RecordSettings(record_focus=False), Target("Notepad"))
+        try:
+            hub._on_click(250, 130, mouse.Button.left, True)
+            hub._on_click(250, 130, mouse.Button.left, False)
+        finally:
+            acts = hub.stop_recording()
+        self.assertEqual([(a.kind, a.params.get("x"), a.params.get("y")) for a in acts], [("click", 50, 30)])

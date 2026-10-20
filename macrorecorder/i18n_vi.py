@@ -374,3 +374,41 @@ VI.update({
     "PayPal — choose an amount": "PayPal — tự chọn số tiền",
     "GitHub Sponsors — monthly or one-time": "GitHub Sponsors — hằng tháng hoặc một lần",
 })
+
+# ------------------------------------------------- target window / launch
+VI.update({
+    "Launch app & wait for window": "Mở ứng dụng & chờ cửa sổ", "Program, app or file": "Chương trình, app hoặc tệp",
+    "Wait for its window and bring it to the front": "Chờ cửa sổ của nó hiện ra và đưa lên trước",
+    "Continue immediately": "Tiếp tục ngay",
+    "Window title / app contains (empty = program name)": "Tiêu đề cửa sổ / tên app chứa (trống = tên chương trình)",
+    "Extra wait after the window appears (ms)": "Chờ thêm sau khi cửa sổ hiện (ms)",
+    "wait for window": "chờ cửa sổ",
+    "Target window": "Cửa sổ mục tiêu", "Target window…": "Cửa sổ mục tiêu…",
+    "Make the macro work inside one application window": "Cho macro làm việc trong một cửa sổ ứng dụng nhất định",
+    "Record in a window…": "Ghi trong một cửa sổ…",
+    "Works anywhere on the screen": "Hoạt động trên toàn màn hình",
+    "Choose a target window…": "Chọn cửa sổ mục tiêu…", "Change…": "Đổi…",
+    "Remove the target window": "Bỏ cửa sổ mục tiêu",
+    "positions relative to the window": "toạ độ tương đối theo cửa sổ",
+    "brought to the front automatically": "tự đưa lên trước",
+    "The macro will work in this window: it is brought to the front before steps that use the mouse, keyboard or "
+    "screen, and positions are measured from its top-left corner — so the macro keeps working when the window is "
+    "moved or on another monitor.":
+        "Macro sẽ làm việc trong cửa sổ này: cửa sổ được đưa lên trước trước các bước dùng chuột, bàn phím hoặc màn "
+        "hình, và toạ độ tính từ góc trên-trái của nó — nên macro vẫn chạy đúng khi cửa sổ bị di chuyển hoặc nằm ở "
+        "màn hình khác.",
+    "Open windows": "Các cửa sổ đang mở", "Pick by switching to it (3 s)": "Chọn bằng cách chuyển sang nó (3 giây)",
+    "Switch to the window…": "Chuyển sang cửa sổ…", "Refresh": "Làm mới", "(no title)": "(không có tiêu đề)",
+    "e.g. Google Chrome, notepad, Excel": "vd. Google Chrome, notepad, Excel",
+    "optional — leave empty if the title changes (documents, web pages)":
+        "không bắt buộc — để trống nếu tiêu đề hay đổi (tài liệu, trang web)",
+    "Application contains:": "Tên ứng dụng chứa:", "Window title contains:": "Tiêu đề cửa sổ chứa:",
+    "Wait for the window up to:": "Chờ cửa sổ tối đa:",
+    "Bring the window to the front when it is not active": "Đưa cửa sổ lên trước khi nó không được chọn",
+    "Measure positions from the window's top-left corner": "Tính toạ độ từ góc trên-trái của cửa sổ",
+    "Convert the existing positions to this window (it is now at {x}, {y})":
+        "Chuyển các toạ độ hiện có sang theo cửa sổ này (cửa sổ đang ở {x}, {y})",
+    "Convert the existing positions back to screen coordinates": "Chuyển các toạ độ về lại toạ độ màn hình",
+    "Convert the positions back to screen coordinates (the window is now at {x}, {y})?":
+        "Chuyển các toạ độ về lại toạ độ màn hình (cửa sổ đang ở {x}, {y})?",
+})

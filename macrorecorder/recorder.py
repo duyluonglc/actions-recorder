@@ -64,6 +64,9 @@ class InputHub:
         self._kb: keyboard.Listener | None = None
         self._mouse: mouse.Listener | None = None
         self._focus_thread: threading.Thread | None = None
+        self._origin: tuple[int, int] | None = None    # target window corner (window-relative recording)
+        self._target = None
+        self._target_win = None
         self.hotkeys_enabled = True
 
     # ----------------------------------------------------------- lifecycle
@@ -100,7 +103,15 @@ class InputHub:
     def _now(self) -> float:
         return (time.perf_counter() - self._t0 - self._pause_total) * 1000.0
 
-    def start_recording(self, opts: RecordSettings) -> None:
+    def start_recording(self, opts: RecordSettings, target=None) -> None:
+        """``target``: a macro Target; with ``relative`` set, positions are recorded
+        relative to that window's top-left corner."""
+        self._target = target if (target is not None and target.relative) else None
+        self._origin = None
+        self._target_win = None
+        if self._target is not None:
+            self._track_target_once()
+            threading.Thread(target=self._track_target, daemon=True).start()
         with self._lock:
             self._opts = opts
             self._raw = []
@@ -144,6 +155,9 @@ class InputHub:
             self._mouse = None
 
     def _add(self, kind: str, **data) -> None:
+        if self._origin is not None and "x" in data:
+            data["x"] -= self._origin[0]
+            data["y"] -= self._origin[1]
         with self._lock:
             if not self._recording or self._paused:
                 return
@@ -151,6 +165,26 @@ class InputHub:
             n = len(self._raw)
         if self.on_count:
             self.on_count(n)
+
+    def _track_target_once(self) -> None:
+        from . import winmgr
+        t = self._target
+        w = winmgr.refresh(self._target_win) if self._target_win is not None else None
+        if w is None:
+            w = winmgr.find_window(t.app, t.title)
+        if w is not None and w.rect:
+            self._target_win = w
+            self._origin = w.origin
+
+    def _track_target(self) -> None:
+        """Follow the target window while recording, so moving it does not break positions."""
+        time.sleep(0.15)
+        while self._recording and self._target is not None:
+            try:
+                self._track_target_once()
+            except Exception:
+                pass
+            time.sleep(0.15)
 
     def _poll_focus(self) -> None:
         from . import winmgr

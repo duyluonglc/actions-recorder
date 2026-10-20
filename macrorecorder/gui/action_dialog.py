@@ -208,7 +208,7 @@ class ColorW(FieldWidget):
         if r:
             self.w.setText(r["color"])
             if self.dlg.kind == "wait_pixel" and "pos" in self.dlg.widgets:
-                self.dlg.widgets["pos"].set_xy(*r["pos"])
+                self.dlg.widgets["pos"].set_screen_xy(*r["pos"])
 
     def choose(self):
         c = QColorDialog.getColor(QColor(self.w.text()), self)
@@ -260,15 +260,20 @@ class PosW(FieldWidget):
         self.x.setValue(int(x))
         self.y.setValue(int(y))
 
+    def set_screen_xy(self, x, y):
+        """A point picked on screen; stored relative to the target window if needed."""
+        o = self.dlg.origin_fn() or (0, 0)
+        self.set_xy(int(x) - o[0], int(y) - o[1])
+
     def pick(self):
         r = overlays.pick("point", self.dlg.hide_list())
         if r:
-            self.set_xy(*r["pos"])
+            self.set_screen_xy(*r["pos"])
 
     def countdown(self, btn, n=3):
         if n == 0:
             x, y = mouse.Controller().position
-            self.set_xy(x, y)
+            self.set_screen_xy(x, y)
             btn.setText(tr("Capture in 3 s"))
             btn.setEnabled(True)
             return
@@ -278,7 +283,8 @@ class PosW(FieldWidget):
 
     def mark(self):
         if not self.cur.isChecked():
-            self.dlg.marker.show_point(self.x.value(), self.y.value(), 1500)
+            o = self.dlg.origin_fn() or (0, 0)
+            self.dlg.marker.show_point(self.x.value() + o[0], self.y.value() + o[1], 1500)
 
     def get(self, p):
         if self.f.optional and self.cur.isChecked():
@@ -336,11 +342,15 @@ class RegionW(FieldWidget):
     def pick(self):
         r = overlays.pick("region", self.dlg.hide_list())
         if r:
-            self.set_rect(r["rect"])
+            o = self.dlg.origin_fn() or (0, 0)
+            x, y, w, h = r["rect"]
+            self.set_rect([x - o[0], y - o[1], w, h])
 
     def mark(self):
         if not self.whole.isChecked():
-            self.dlg.marker.show_rect(*[s.value() for s in self.spins], ms=1500)
+            o = self.dlg.origin_fn() or (0, 0)
+            x, y, w, h = [s.value() for s in self.spins]
+            self.dlg.marker.show_rect(x + o[0], y + o[1], w, h, ms=1500)
 
     def get(self, p):
         p["region"] = None if self.whole.isChecked() else [s.value() for s in self.spins]
@@ -442,9 +452,11 @@ class ActionEditor(QWidget):
     changed = Signal()
 
     def __init__(self, action: Action, labels: list[str], store, marker, hide=None, parent=None,
-                 compact: bool = False):
+                 compact: bool = False, origin=None):
         super().__init__(parent)
         self.compact = compact
+        # callable -> (x, y) of the target window when positions are window-relative, else None
+        self.origin_fn = origin or (lambda: None)
         self.action = action.copy()
         self.kind = action.kind
         self.labels = labels
@@ -462,7 +474,9 @@ class ActionEditor(QWidget):
             w = WIDGETS[f.type](f, self)
             self.widgets[f.name] = w
             self.rows[f.name] = self.form.rowCount()
-            self.form.addRow(tr(f.label), w)
+            lbl = QLabel(tr(f.label))
+            lbl.setWordWrap(True)          # long labels must not widen the narrow inspector
+            self.form.addRow(lbl, w)
         self.label_edit = QLineEdit(action.label)
         self.label_edit.setPlaceholderText(tr("name that other steps can jump to"))
         self.comment_edit = QLineEdit(action.comment)
@@ -525,6 +539,10 @@ class ActionEditor(QWidget):
     def test(self):
         a = self.result_action()
         a.enabled = True
+        o = self.origin_fn()
+        if o:                                   # window-relative → screen coordinates for the test
+            from ..macro import shift_positions
+            a = shift_positions([a], o[0], o[1])[0]
         self.test_btn.setEnabled(False)
         QApplication.setOverrideCursor(Qt.WaitCursor)
         box: dict = {}
@@ -555,12 +573,12 @@ class ActionEditor(QWidget):
 
 
 class ActionDialog(QDialog):
-    def __init__(self, action: Action, labels: list[str], store, marker, parent=None, hide=None):
+    def __init__(self, action: Action, labels: list[str], store, marker, parent=None, hide=None, origin=None):
         super().__init__(parent)
         spec = CATALOG[action.kind]
         self.setWindowTitle(f"{spec.icon}  {tr(spec.name)}")
         self.setMinimumWidth(640)
-        self.editor = ActionEditor(action, labels, store, marker, hide, self)
+        self.editor = ActionEditor(action, labels, store, marker, hide, self, origin=origin)
         bb = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         bb.accepted.connect(lambda: self.editor.validate() and self.accept())
         bb.rejected.connect(self.reject)

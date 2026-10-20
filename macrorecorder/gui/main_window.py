@@ -18,7 +18,7 @@ from .. import APP_NAME, FILE_EXT, __version__, system
 from ..actions import CATALOG, CATEGORIES, Action
 from ..engine import Engine, EngineUI
 from ..i18n import set_language, tr
-from ..macro import Macro, hidden_rows, optimize, scale_waits
+from ..macro import Macro, hidden_rows, optimize, scale_waits, shift_positions
 from ..recorder import InputHub
 from ..system import AFTER_ACTIONS
 from .action_dialog import ActionDialog
@@ -30,6 +30,7 @@ from .panels import ScheduleDialog, SearchDialog, VariableExplorer, entry_due
 from .settings_dialog import SettingsDialog
 from .steps import StepList, StepModel
 from .store import Store
+from .target import TargetBar, TargetDialog
 from .workspace import CATEGORY_TITLES, LIBRARY, EmptyState, Header, Inspector, Library, RunOptions
 
 FILE_FILTER = f"Macro (*{FILE_EXT} *.json);;All files (*)"
@@ -145,6 +146,12 @@ def apply_theme(app: QApplication, theme: str) -> None:
         #recent::item {{ padding: 5px; border-radius: 5px; }}
         #recent::item:hover {{ background: rgba(127,127,127,40); }}
         #popup {{ border: 1px solid rgba(127,127,127,90); border-radius: 8px; background: palette(window); }}
+        #targetBar {{ border: 1px solid rgba(109,90,230,90); border-radius: 8px; background: rgba(109,90,230,22);
+                      margin: 0 4px 4px 4px; }}
+        #targetBar QLabel {{ background: transparent; }}
+        QPushButton#flatButton {{ border: none; border-radius: 6px; padding: 3px 10px; color: {ACCENT};
+                                  font-weight: 600; background: transparent; }}
+        QPushButton#flatButton:hover {{ background: rgba(109,90,230,45); }}
     """)
 
 
@@ -275,6 +282,9 @@ class MainWindow(QMainWindow):
         self.a_select_all = A("Select all", lambda: self.view.selectAll(), QKeySequence.SelectAll)
 
         self.a_schedule = A("Scheduler…", self.open_scheduler)
+        self.a_target = A("Target window…", self.choose_target, None, None,
+                          "Make the macro work inside one application window")
+        self.a_record_window = A("Record in a window…", self.record_in_window)
         self.a_vars = A("Variables", lambda on: self.vars_dock.setVisible(on), None, None, checkable=True)
         self.a_library = A("Step library", lambda on: self.library.setVisible(on), None, None, checkable=True)
         self.a_inspector = A("Step properties", lambda on: self.inspector.setVisible(on), None, None,
@@ -323,9 +333,11 @@ class MainWindow(QMainWindow):
         m.addSeparator()
         m.addActions([self.a_search, self.a_find_next, self.a_optimize, self.a_scale])
         m = mb.addMenu(tr("Run"))
+        m.addAction(self.a_target)
+        m.addSeparator()
         m.addActions([self.a_play, self.a_play_cursor, self.a_play_sel, self.a_pause, self.a_stop])
         m.addSeparator()
-        m.addActions([self.a_record_new, self.a_record])
+        m.addActions([self.a_record_new, self.a_record, self.a_record_window])
         m.addSeparator()
         m.addAction(self.a_schedule)
         m = mb.addMenu(tr("View"))
@@ -395,9 +407,14 @@ class MainWindow(QMainWindow):
         center.setObjectName("center")
         cl = QVBoxLayout(center)
         cl.setContentsMargins(6, 6, 6, 0)
+        self.target_bar = TargetBar()
+        self.target_bar.edit_clicked.connect(self.choose_target)
+        self.target_bar.clear_clicked.connect(self.clear_target)
+        cl.addWidget(self.target_bar)
         cl.addWidget(self.stack)
         self.inspector = Inspector(self.store, self.marker)
         self.inspector.applied.connect(self.apply_inspector)
+        self.inspector.origin_fn = self.target_origin
         split = QSplitter()
         split.setChildrenCollapsible(False)
         split.addWidget(self.library)
@@ -420,6 +437,60 @@ class MainWindow(QMainWindow):
         self.time_label = QLabel()
         self.statusBar().addWidget(self.count_label, 1)
         self.statusBar().addPermanentWidget(self.time_label)
+
+    # ======================================================== target window
+    def target_origin(self) -> tuple[int, int] | None:
+        """Top-left corner of the target window when the macro uses window-relative positions."""
+        t = self.macro.target
+        if t is None or not t.relative:
+            return None
+        from .. import winmgr
+        w = winmgr.find_window(t.app, t.title)
+        return w.origin if (w is not None and w.rect) else None
+
+    def _has_positions(self) -> bool:
+        return any(a.params.get("x") is not None or a.params.get("region") or a.kind == "mouse_path"
+                   for a in self.macro.actions)
+
+    def choose_target(self) -> bool:
+        if self.busy:
+            return False
+        dlg = TargetDialog(self.macro.target, self._has_positions(), self)
+        if not dlg.exec():
+            return False
+        conv = dlg.conversion()
+        self.macro.target = dlg.result_target()
+        if conv:
+            self.set_actions(shift_positions(self.macro.actions, *conv))
+        else:
+            self.mark_dirty()
+        return True
+
+    def clear_target(self):
+        t = self.macro.target
+        if t is None or self.busy:
+            return
+        conv = None
+        if t.relative and self._has_positions():
+            o = self.target_origin()
+            if o is not None:
+                r = QMessageBox.question(
+                    self, tr("Target window"),
+                    tr("Convert the positions back to screen coordinates (the window is now at {x}, {y})?")
+                    .format(x=o[0], y=o[1]), QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel)
+                if r == QMessageBox.Cancel:
+                    return
+                if r == QMessageBox.Yes:
+                    conv = o
+        self.macro.target = None
+        if conv:
+            self.set_actions(shift_positions(self.macro.actions, *conv))
+        else:
+            self.mark_dirty()
+
+    def record_in_window(self):
+        if self.choose_target():
+            self.record(new=False)
 
     def _record_clicked(self):
         if self.hub.recording:
@@ -521,6 +592,8 @@ class MainWindow(QMainWindow):
         s = self.macro.duration_ms() // 1000
         self.time_label.setText(f"{s // 3600:02d}:{s % 3600 // 60:02d}:{s % 60:02d}")
         self.stack.setCurrentIndex(1 if (n or self.path or self.busy) else 0)
+        self.target_bar.set_target(self.macro.target)
+        self.target_bar.setVisible(self.stack.currentIndex() == 1 or self.macro.target is not None)
         if self.stack.currentIndex() == 0:
             self.empty.set_recent(self.store.recent())
         self.refresh_actions()
@@ -640,14 +713,18 @@ class MainWindow(QMainWindow):
             a = self.macro.actions[rows[0]]
             if a.params.get("x") is not None and a.params.get("y") is not None:
                 try:
-                    self.marker.show_point(int(a.params["x"]), int(a.params["y"]), 1200)
+                    o = self.target_origin() or (0, 0)
+                    self.marker.show_point(int(a.params["x"]) + o[0], int(a.params["y"]) + o[1], 1200)
                 except (TypeError, ValueError):
                     pass
             elif a.kind == "mouse_path" and a.params.get("points"):
                 q = a.params["points"][-1]
-                self.marker.show_point(int(q[0]), int(q[1]), 1200)
+                o = self.target_origin() or (0, 0)
+                self.marker.show_point(int(q[0]) + o[0], int(q[1]) + o[1], 1200)
             elif a.params.get("region"):
-                self.marker.show_rect(*[int(v) for v in a.params["region"]], ms=1200)
+                o = self.target_origin() or (0, 0)
+                x, y, w, h = [int(v) for v in a.params["region"]]
+                self.marker.show_rect(x + o[0], y + o[1], w, h, ms=1200)
             else:
                 self.marker.hide()
         else:
@@ -704,7 +781,8 @@ class MainWindow(QMainWindow):
                     break
             target.setFocus()
             return
-        dlg = ActionDialog(self.macro.actions[r], self.labels(), self.store, self.marker, self, hide=[self])
+        dlg = ActionDialog(self.macro.actions[r], self.labels(), self.store, self.marker, self, hide=[self],
+                           origin=self.target_origin)
         if dlg.exec():
             new = list(self.macro.actions)
             new[r] = dlg.result_action()
@@ -930,7 +1008,16 @@ class MainWindow(QMainWindow):
         QTimer.singleShot(0 if from_hotkey else 300, self._begin_record)
 
     def _begin_record(self):
-        self.hub.start_recording(self.store.record_settings())
+        settings = self.store.record_settings()
+        t = self.macro.target
+        if t is not None:
+            settings.record_focus = False            # the target window is activated automatically
+            if t.activate:
+                from .. import winmgr
+                w = winmgr.find_window(t.app, t.title)
+                if w is not None:
+                    winmgr.activate(w)
+        self.hub.start_recording(settings, t)
         self.status_text("● " + tr("Recording") + " — 0 " + tr("events"))
         self.refresh_actions()
         self.statusBar().showMessage(tr("Recording…"))
@@ -939,7 +1026,7 @@ class MainWindow(QMainWindow):
         acts = self.hub.stop_recording(strip_last_click=via_ui)
         if self.record_at is None:
             self.push_undo()
-            self.macro = Macro(acts)
+            self.macro = Macro(acts, target=self.macro.target)
             self.path = None
             self.macro.actions = acts
             self.model.set_actions(self.macro.actions)

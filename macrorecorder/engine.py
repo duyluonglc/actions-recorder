@@ -15,10 +15,15 @@ from dataclasses import dataclass, field
 
 from pynput import keyboard, mouse
 
-from . import keys, system
+from . import keys, system, winmgr
 from .actions import FILTER_GROUPS, Action
 from .expr import compare, evaluate, number, substitute
-from .macro import Macro
+from .macro import Macro, Target
+
+# steps that act on the screen, mouse or keyboard: the target window must be ready for them
+TARGET_KINDS = {"click", "mouse_down", "mouse_up", "mouse_move", "mouse_path", "scroll", "type_text", "key_press",
+                "key_down", "key_up", "wait_image", "wait_text", "wait_pixel", "wait_change", "find_image",
+                "find_text", "capture_text", "capture_image", "read_barcode", "get_pixel", "ai_image", "ai_find"}
 
 BUTTONS = {"left": mouse.Button.left, "right": mouse.Button.right, "middle": mouse.Button.middle}
 PASTE_MOD = keyboard.Key.cmd if sys.platform == "darwin" else keyboard.Key.ctrl
@@ -88,6 +93,9 @@ class Engine:
         self._listeners: list = []
         self._last_var_push = 0.0
         self.current_index = -1
+        self.offset = (0, 0)
+        self.target: Target | None = None
+        self.target_win = None
 
     # ----------------------------------------------------------- control
     @property
@@ -155,7 +163,9 @@ class Engine:
         self._start_listeners(s)
         try:
             self.offset = (0, 0)
-            if s.relative:
+            self.target = macro.target
+            self.target_win = None
+            if self.target is None and s.relative:
                 first = next((a for a in macro.actions if a.params.get("x") is not None), None)
                 if first is None:
                     first = next((a for a in macro.actions if a.kind == "mouse_path" and a.params.get("points")), None)
@@ -231,6 +241,8 @@ class Engine:
                 continue
             if depth == 0:
                 self.ui.progress(pc, cycle)
+            if self.target is not None and a.kind in TARGET_KINDS:
+                self.ensure_target()
             try:
                 jump = self._exec(a, labels, counters, pc, cycle, depth)
             except (Stop, EngineError):
@@ -344,8 +356,39 @@ class Engine:
     def screen_region(self, a: Action):
         r = a.params.get("region")
         if not r:
+            if self.target is not None and self.target.relative and self.target_win is not None \
+                    and self.target_win.rect:
+                return list(self.target_win.rect)      # "whole screen" = the whole target window
             return None
-        return [int(self.num(v)) for v in r]
+        r = [int(self.num(v)) for v in r]
+        if self.target is not None and self.target.relative:
+            r[0] += self.offset[0]
+            r[1] += self.offset[1]
+        return r
+
+    def ensure_target(self) -> None:
+        """Make sure the target window exists (waiting for it if needed), bring it
+        to the front, and use its top-left corner as the coordinate origin."""
+        t = self.target
+        w = winmgr.refresh(self.target_win) if self.target_win is not None else None
+        if w is None or not w.matches(t.app, t.title):
+            found: list = []
+
+            def test():
+                win = winmgr.find_window(t.app, t.title)
+                if win is not None:
+                    found.append(win)
+                return win is not None
+            if not self.poll(test, max(1, t.timeout_ms), 0.25):
+                raise EngineError(f"Target window not found: {t.describe()}", self.current_index)
+            w = found[-1]
+        if t.activate and not winmgr.is_active(w):
+            winmgr.activate(w)
+            self.sleep(0.25)
+            w = winmgr.refresh(w) or w
+        self.target_win = w
+        if t.relative and w.rect:
+            self.offset = w.origin
 
     def fail(self, a: Action, what: str) -> str | None:
         of = a.params.get("on_fail", "continue")
@@ -370,10 +413,12 @@ class Engine:
         x, y = p
         x += int(a.params.get("off_x", 0) or 0)
         y += int(a.params.get("off_y", 0) or 0)
+        # variables use the macro's coordinate system so they can feed later click steps
+        rel = self.offset if (self.target is not None and self.target.relative) else (0, 0)
         if a.params.get("var_x"):
-            self.vars[a.params["var_x"]] = str(x)
+            self.vars[a.params["var_x"]] = str(x - rel[0])
         if a.params.get("var_y"):
-            self.vars[a.params["var_y"]] = str(y)
+            self.vars[a.params["var_y"]] = str(y - rel[1])
         then = a.params.get("then", "click")
         if then != "none":
             self.move_to((x, y))
@@ -530,7 +575,6 @@ class Engine:
             if not self.poll(test, self.num(p.get("timeout", 0)), 0.25):
                 return self.fail(a, "File wait timed out")
         elif k == "wait_window":
-            from . import winmgr
             title = self.sub(p.get("title", ""))
 
             def test():
@@ -646,16 +690,38 @@ class Engine:
                 raise EngineError("Embedded macros nested too deeply", pc)
             path = self.resolve_path(p.get("path", ""))
             sub = Macro.load(path)
-            old = self.base_dir
+            old = self.base_dir, self.target, self.target_win, self.offset
             self.base_dir = os.path.dirname(os.path.abspath(path))
+            if sub.target is not None:          # an embedded macro may work in its own window
+                self.target, self.target_win = sub.target, None
             try:
                 self._exec_list(sub.actions, cycle, 0, None, depth + 1)
             finally:
-                self.base_dir = old
+                self.base_dir, self.target, self.target_win, self.offset = old
+        elif k == "launch":
+            cmd = self.sub(p.get("command", ""))
+            if not cmd:
+                raise EngineError("No program given", pc)
+            system.open_target(cmd, self.sub(p.get("args", "")), False)
+            if p.get("wait", "window") == "window":
+                name = self.sub(p.get("window", "")) or system.program_name(cmd)
+                found: list = []
+
+                def test():
+                    win = winmgr.find_window("", name)
+                    if win is not None:
+                        found.append(win)
+                    return win is not None
+                if not self.poll(test, self.num(p.get("timeout", 30000)), 0.3):
+                    return self.fail(a, f"Window did not appear: {name}")
+                win = found[-1]
+                winmgr.activate(win)
+                if self.target is not None and win.matches(self.target.app, self.target.title):
+                    self.target_win = winmgr.refresh(win) or win
+                self.sleep(self.num(p.get("settle", 500)) / 1000)
         elif k == "execute":
             system.open_target(self.sub(p.get("command", "")), self.sub(p.get("args", "")), bool(p.get("wait")))
         elif k == "focus":
-            from . import winmgr
             app, title = self.sub(p.get("app", "")), self.sub(p.get("title", ""))
             found = []
 

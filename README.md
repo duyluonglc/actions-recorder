@@ -39,6 +39,12 @@ Or simply ⭐ star the repository and tell a friend. Thank you!
   data (variables, calculations, CSV lists, saving to files, reading web pages), flow (jump / loop, if / else,
   run another macro, launch programs, focus windows, message boxes, notifications) and **AI**
   (prompts, screen analysis, find an object by description — OpenRouter, OpenAI, or local Ollama / LM Studio).
+- **Target window**: make a macro work inside one application window. The window is brought to the front
+  automatically and positions are measured from its top-left corner, so the macro keeps working when the window
+  moves or sits on another monitor. *Record in a window…* records directly in window coordinates.
+- **Launch app & wait for window**: start a program and continue only when its window has appeared.
+- **Multiple monitors**: recording, replay, image search and OCR work across all screens (including screens left
+  of or above the main one), with per-monitor scaling on Windows.
 - **Global shortcuts**: F9 record, F10 run, F11 stop, F12 pause (configurable), shown on the buttons.
 - **Scheduler**, variable explorer, tray icon, command line (`--play`), launcher files, CSV export,
   English & Vietnamese UI, light & dark themes.

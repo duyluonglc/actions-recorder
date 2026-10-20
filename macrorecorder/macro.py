@@ -14,13 +14,45 @@ PLATFORM = "darwin" if sys.platform == "darwin" else ("win32" if sys.platform.st
 
 
 @dataclass
+class Target:
+    """The window a macro works in.
+
+    app / title: text the application name / window title must contain.
+    activate:    bring that window to the front before steps that use the mouse,
+                 keyboard or screen.
+    relative:    positions in the macro are relative to the window's top-left corner.
+    """
+    app: str = ""
+    title: str = ""
+    activate: bool = True
+    relative: bool = True
+    timeout_ms: int = 10000
+
+    def to_dict(self) -> dict:
+        return {"app": self.app, "title": self.title, "activate": self.activate, "relative": self.relative,
+                "timeout_ms": self.timeout_ms}
+
+    @classmethod
+    def from_dict(cls, d: dict | None) -> "Target | None":
+        if not d or not (d.get("app") or d.get("title")):
+            return None
+        return cls(d.get("app", ""), d.get("title", ""), bool(d.get("activate", True)),
+                   bool(d.get("relative", True)), int(d.get("timeout_ms", 10000)))
+
+    def describe(self) -> str:
+        return " — ".join(x for x in (self.app, f"“{self.title}”" if self.title else "") if x)
+
+
+@dataclass
 class Macro:
     actions: list[Action] = field(default_factory=list)
     platform: str = PLATFORM
+    target: Target | None = None
 
     def to_json(self) -> str:
         return json.dumps({
             "format": "macrorecorder", "version": 2, "app": __version__, "platform": self.platform,
+            **({"target": self.target.to_dict()} if self.target else {}),
             "actions": [a.to_dict() for a in self.actions],
         }, indent=1, ensure_ascii=False)
 
@@ -35,7 +67,7 @@ class Macro:
         for d in data.get("actions", []):
             if d.get("kind") in CATALOG:
                 acts.append(Action.from_dict(d))
-        return cls(acts, data.get("platform", PLATFORM))
+        return cls(acts, data.get("platform", PLATFORM), Target.from_dict(data.get("target")))
 
     def save(self, path: str) -> None:
         with open(path, "w", encoding="utf-8") as f:
@@ -47,7 +79,8 @@ class Macro:
             return cls.from_json(f.read())
 
     def copy(self) -> "Macro":
-        return Macro([a.copy() for a in self.actions], self.platform)
+        return Macro([a.copy() for a in self.actions], self.platform,
+                      Target.from_dict(self.target.to_dict()) if self.target else None)
 
     def duration_ms(self) -> int:
         return sum(a.duration_ms() for a in self.actions if a.enabled)
@@ -103,6 +136,27 @@ def _convert_v1(events: list[dict]) -> list[Action]:
 
 
 # ------------------------------------------------------------ edit helpers
+
+def shift_positions(actions: list[Action], dx: int, dy: int) -> list[Action]:
+    """Move every screen position by (dx, dy): points, paths and search areas.
+    Used to turn screen coordinates into window coordinates and back."""
+    out = []
+    for a in actions:
+        a = a.copy()
+        p = a.params
+        for kx, ky in (("x", "y"),):
+            if isinstance(p.get(kx), int) and isinstance(p.get(ky), int):
+                p[kx] += dx
+                p[ky] += dy
+        if a.kind == "mouse_path" and p.get("points"):
+            p["points"] = [[q[0] + dx, q[1] + dy] + list(q[2:]) for q in p["points"]]
+        if p.get("region"):
+            r = list(p["region"])
+            if all(isinstance(v, int) for v in r[:2]):
+                p["region"] = [r[0] + dx, r[1] + dy] + r[2:]
+        out.append(a)
+    return out
+
 
 def group_ranges(actions: list[Action]) -> dict[int, int]:
     """Map group-start index -> index of its matching group_end (or last row)."""

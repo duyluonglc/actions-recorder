@@ -17,6 +17,14 @@ class WinInfo:
     rect: tuple[int, int, int, int] | None = None   # x, y, w, h
     handle: object = None                           # hwnd (Windows) / pid (macOS)
     pid: int = 0
+    wid: int = 0                                    # macOS window number
+
+    @property
+    def origin(self) -> tuple[int, int]:
+        return (self.rect[0], self.rect[1]) if self.rect else (0, 0)
+
+    def describe(self) -> str:
+        return " — ".join(x for x in (self.app, self.title) if x)
 
     def matches(self, app: str = "", title: str = "") -> bool:
         if app and app.lower() not in self.app.lower():
@@ -50,6 +58,28 @@ if sys.platform.startswith("win"):
     kernel32.QueryFullProcessImageNameW.argtypes = [wintypes.HANDLE, wintypes.DWORD, wintypes.LPWSTR,
                                                     ctypes.POINTER(wintypes.DWORD)]
     WNDENUMPROC = ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)
+    user32.IsWindow.argtypes = [wintypes.HWND]
+    try:
+        dwmapi = ctypes.WinDLL("dwmapi")
+    except OSError:
+        dwmapi = None
+
+    def _frame(hwnd) -> tuple[int, int, int, int]:
+        """Visible window bounds. GetWindowRect includes an invisible ~7 px resize
+        border on Windows 10/11, which would shift window-relative coordinates."""
+        r = wintypes.RECT()
+        if dwmapi is not None and dwmapi.DwmGetWindowAttribute(
+                wintypes.HWND(hwnd), 9, ctypes.byref(r), ctypes.sizeof(r)) == 0:   # DWMWA_EXTENDED_FRAME_BOUNDS
+            return r.left, r.top, r.right - r.left, r.bottom - r.top
+        user32.GetWindowRect(hwnd, ctypes.byref(r))
+        return r.left, r.top, r.right - r.left, r.bottom - r.top
+
+    def _cloaked(hwnd) -> bool:
+        if dwmapi is None:
+            return False
+        v = wintypes.DWORD()
+        dwmapi.DwmGetWindowAttribute(wintypes.HWND(hwnd), 14, ctypes.byref(v), ctypes.sizeof(v))   # DWMWA_CLOAKED
+        return bool(v.value)
 
     def _info(hwnd) -> WinInfo:
         n = user32.GetWindowTextLengthW(hwnd)
@@ -65,9 +95,7 @@ if sys.platform.startswith("win"):
             if kernel32.QueryFullProcessImageNameW(h, 0, pbuf, ctypes.byref(size)):
                 app = os.path.splitext(os.path.basename(pbuf.value))[0]
             kernel32.CloseHandle(h)
-        r = wintypes.RECT()
-        user32.GetWindowRect(hwnd, ctypes.byref(r))
-        return WinInfo(app, buf.value, (r.left, r.top, r.right - r.left, r.bottom - r.top), hwnd, pid.value)
+        return WinInfo(app, buf.value, _frame(hwnd), hwnd, pid.value)
 
     def active_window() -> WinInfo | None:
         hwnd = user32.GetForegroundWindow()
@@ -77,7 +105,7 @@ if sys.platform.startswith("win"):
         out = []
 
         def cb(hwnd, _):
-            if user32.IsWindowVisible(hwnd) and user32.GetWindowTextLengthW(hwnd) > 0:
+            if user32.IsWindowVisible(hwnd) and user32.GetWindowTextLengthW(hwnd) > 0 and not _cloaked(hwnd):
                 out.append(_info(hwnd))
             return True
         user32.EnumWindows(WNDENUMPROC(cb), 0)
@@ -96,6 +124,15 @@ if sys.platform.startswith("win"):
     def set_rect(w: WinInfo, rect) -> None:
         x, y, ww, hh = rect
         user32.MoveWindow(w.handle, int(x), int(y), int(ww), int(hh), True)
+
+    def refresh(w: WinInfo) -> WinInfo | None:
+        """The same window with its current position, or None if it was closed."""
+        if not w.handle or not user32.IsWindow(w.handle) or not user32.IsWindowVisible(w.handle):
+            return None
+        return _info(w.handle)
+
+    def is_active(w: WinInfo) -> bool:
+        return bool(w.handle) and user32.GetForegroundWindow() == w.handle
 
 # ======================================================================= macOS
 elif sys.platform == "darwin":
@@ -119,17 +156,23 @@ elif sys.platform == "darwin":
         pid = app.processIdentifier()
         name = str(app.localizedName() or "")
         for d in _cg_windows():
-            if d.get("kCGWindowOwnerPID") == pid and d.get("kCGWindowLayer", 0) == 0:
-                return WinInfo(name, str(d.get("kCGWindowName") or ""), _rect(d), pid, pid)
+            if d.get("kCGWindowOwnerPID") == pid and d.get("kCGWindowLayer", 0) == 0 and _big(d):
+                return WinInfo(name, str(d.get("kCGWindowName") or ""), _rect(d), pid, pid,
+                               int(d.get("kCGWindowNumber", 0)))
         return WinInfo(name, "", None, pid, pid)
+
+    def _big(d) -> bool:
+        r = _rect(d)
+        return bool(r) and r[2] >= 60 and r[3] >= 40
 
     def list_windows() -> list[WinInfo]:
         out = []
         for d in _cg_windows():
-            if d.get("kCGWindowLayer", 0) != 0:
+            if d.get("kCGWindowLayer", 0) != 0 or not _big(d):
                 continue
+            pid = d.get("kCGWindowOwnerPID") or 0
             out.append(WinInfo(str(d.get("kCGWindowOwnerName") or ""), str(d.get("kCGWindowName") or ""),
-                               _rect(d), d.get("kCGWindowOwnerPID"), d.get("kCGWindowOwnerPID") or 0))
+                               _rect(d), pid, pid, int(d.get("kCGWindowNumber", 0))))
         return out
 
     def _osa(script: str) -> None:
@@ -147,6 +190,23 @@ elif sys.platform == "darwin":
             _osa(f'tell application "System Events" to tell process "{n}" to '
                  f'perform action "AXRaise" of (first window whose name contains "{t}")')
         return ok
+
+    def refresh(w: WinInfo) -> WinInfo | None:
+        for d in _cg_windows():
+            if w.wid and int(d.get("kCGWindowNumber", 0)) == w.wid:
+                return WinInfo(w.app, str(d.get("kCGWindowName") or w.title), _rect(d), w.handle, w.pid, w.wid)
+        return None
+
+    def is_active(w: WinInfo) -> bool:
+        from AppKit import NSWorkspace
+        app = NSWorkspace.sharedWorkspace().frontmostApplication()
+        if app is None or app.processIdentifier() != w.pid:
+            return False
+        # frontmost window of that app (window list is ordered front to back)
+        for d in _cg_windows():
+            if d.get("kCGWindowOwnerPID") == w.pid and d.get("kCGWindowLayer", 0) == 0 and _big(d):
+                return not w.wid or int(d.get("kCGWindowNumber", 0)) == w.wid
+        return True
 
     def set_rect(w: WinInfo, rect) -> None:
         x, y, ww, hh = [int(v) for v in rect]
@@ -168,15 +228,27 @@ else:  # pragma: no cover
     def set_rect(w, rect):
         pass
 
+    def refresh(w):
+        return None
+
+    def is_active(w):
+        return False
+
 
 def find_window(app: str = "", title: str = "") -> WinInfo | None:
     act = active_window()
-    if act and act.matches(app, title):
+    if act and act.pid != os.getpid() and act.matches(app, title):
         return act
     for w in list_windows():
-        if w.matches(app, title):
+        if w.pid != os.getpid() and w.matches(app, title):
             return w
     return None
 
 
-__all__ = ["WinInfo", "active_window", "list_windows", "activate", "set_rect", "find_window"]
+def other_windows() -> list[WinInfo]:
+    """Open windows of other applications (for the window picker)."""
+    return [w for w in list_windows() if w.pid != os.getpid() and (w.app or w.title)]
+
+
+__all__ = ["WinInfo", "active_window", "list_windows", "activate", "set_rect", "find_window", "refresh",
+           "is_active", "other_windows"]

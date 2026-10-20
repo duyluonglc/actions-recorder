@@ -256,6 +256,15 @@ _K: list[Kind] = [
         Field("then_label", "label", "", "If true, jump to (empty = next step)"),
         Field("else_label", "label", "", "If false, jump to (empty = next step)"),
     ], "⑂"),
+    Kind("launch", "Launch app & wait for window", "control", [
+        Field("command", "file", "", "Program, app or file"),
+        Field("args", "str", "", "Arguments"),
+        Field("wait", "choice", "window", "Then", [("window", "Wait for its window and bring it to the front"),
+                                                  ("none", "Continue immediately")]),
+        Field("window", "str", "", "Window title / app contains (empty = program name)"),
+        Field("settle", "num", "500", "Extra wait after the window appears (ms)"),
+        *_timeout_fields(30000),
+    ], "🚀"),
     Kind("run_macro", "Run another macro file", "control", [Field("path", "file", "", "Macro file")], "📎"),
     Kind("execute", "Execute program / open", "control", [
         Field("command", "str", "", "Program, file or URL"),
@@ -476,6 +485,13 @@ class Action:
             return f"\"{p.get('left', '')}\" {tr(op)}{right} ? {t} : {e}"
         if k in ("run_macro",):
             return p.get("path", "")
+        if k == "launch":
+            prog = p.get("command", "")
+            import os as _os
+            name = _os.path.basename(prog.rstrip("/\\")) or prog
+            wait = "" if p.get("wait") == "none" else " → " + tr("wait for window") + (
+                f" “{p.get('window')}”" if p.get("window") else "")
+            return f"{name} {p.get('args', '')}".strip() + wait + fail()
         if k == "execute":
             return f"{p.get('command', '')} {p.get('args', '')}".strip()
         if k == "focus":

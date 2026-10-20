@@ -4,7 +4,9 @@ start-on-login."""
 from __future__ import annotations
 
 import os
+import re
 import shlex
+import shutil
 import subprocess
 import sys
 
@@ -125,10 +127,32 @@ def open_target(command: str, args: str = "", wait: bool = False) -> int | None:
             return None
         argv = (["cmd", "/c", "start", "/wait", "", command] if IS_WIN else
                 ["open"] + (["-W"] if wait else []) + [command] if IS_MAC else ["xdg-open", command])
+    elif os.path.exists(command) or shutil.which(command):
+        argv = [command] + extra
+    elif IS_MAC:
+        # a bare application name such as "Calculator" or "Google Chrome"
+        argv = ["open", "-a", command] + (["-W"] if wait else []) + (["--args"] + extra if extra else [])
+    elif IS_WIN and not wait:
+        # names registered under "App Paths" (chrome, excel, …) are found by the shell
+        os.startfile(command, arguments=args) if args else os.startfile(command)  # type: ignore[attr-defined]
+        return None
     else:
         argv = [command] + extra
     p = subprocess.Popen(argv)
     return p.wait() if wait else None
+
+
+def program_name(command: str) -> str:
+    """Best guess of the application / process name a command starts
+    (``/Applications/Google Chrome.app`` → ``Google Chrome``, ``C:\\x\\notepad.exe`` → ``notepad``)."""
+    c = command.strip().strip('"').rstrip("/\\")
+    if "://" in c:
+        return ""
+    base = re.split(r"[\\/]", c)[-1]
+    for ext in (".app", ".exe", ".lnk", ".bat", ".cmd"):
+        if base.lower().endswith(ext):
+            return base[:-len(ext)]
+    return base
 
 
 def _is_program(path: str) -> bool:
